@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_c334f27bef9845059d5be80e7bf2e27f {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_c334f27bef9845059d5be80e7bf2e27f" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_c334f27bef9845059d5be80e7bf2e27f = L.map(
+                "map_c334f27bef9845059d5be80e7bf2e27f",
+                {
+                    center: [46.86, -113.99],
+                    crs: L.CRS.EPSG3857,
+                    ...{
+  "zoom": 12,
+  "zoomControl": true,
+  "preferCanvas": false,
+}
+
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_3c009e9479eb6bfbe40eb0b01ca9d9d0 = L.tileLayer(
+                "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {
+  "minZoom": 0,
+  "maxZoom": 19,
+  "maxNativeZoom": 19,
+  "noWrap": false,
+  "attribution": "\u0026copy; \u003ca href=\"https://www.openstreetmap.org/copyright\"\u003eOpenStreetMap\u003c/a\u003e contributors",
+  "subdomains": "abc",
+  "detectRetina": false,
+  "tms": false,
+  "opacity": 1,
+}
+
+            );
+        
+    
+            tile_layer_3c009e9479eb6bfbe40eb0b01ca9d9d0.addTo(map_c334f27bef9845059d5be80e7bf2e27f);
+        
+    
+
+        function geo_json_ec2fbfdb147f6079b6e7871a382c6b29_onEachFeature(feature, layer) {
+            layer.on({
+            });
+        };
+        var geo_json_ec2fbfdb147f6079b6e7871a382c6b29 = L.geoJson(null, {
+                onEachFeature: geo_json_ec2fbfdb147f6079b6e7871a382c6b29_onEachFeature,
+            
+            ...{
+}
+        });
+
+        function geo_json_ec2fbfdb147f6079b6e7871a382c6b29_add (data) {
+            geo_json_ec2fbfdb147f6079b6e7871a382c6b29
+                .addData(data);
+        }
+            geo_json_ec2fbfdb147f6079b6e7871a382c6b29_add({"bbox": [-114.08230185365852, 46.732249862987175, -113.92670200395709, 46.922259391031005], "features": [{"bbox": [-114.06610396032836, 46.828394567061025, -114.06221492221496, 46.83045262368907], "geometry": {"coordinates": [[[[-114.06610396032836, 46.828394567061025], [-114.06591058343561, 46.83018802000252], [-114.06423464531046, 46.83045262368907], [-114.06227938346971, 46.830452622922714], [-114.06221492221496, 46.83018802020877], [-114.0623008692941, 46.8295265075043], [-114.06382640318904, 46.829114895979835], [-114.06610396032836, 46.828394567061025]]]], "type": "MultiPolygon"}, "id": "0", "properties": {"Acres": 10.864945001302937, "Control": null, "CoverClass": "L", "Datafile": null, "GPS_Date": "2023-11-10 22:05:07+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Bob Rich", "Note_": null, "Notes": "Treated in November 2023, Bob Rich", "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 43968.87245754557, "Shape_Length": 899.8212788966111, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "immature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-114.05803279613421, 46.8481830939416, -114.05771000073794, 46.848587520095215], "geometry": {"coordinates": [[[[-114.05803279613421, 46.84818326949089], [-114.05803035967926, 46.84858655513514], [-114.05771000073794, 46.848587520095215], [-114.05787229707725, 46.84849775408311], [-114.05787229705034, 46.848333668664594], [-114.05785112972428, 46.8481830939416], [-114.05803279613421, 46.84818326949089]]]], "type": "MultiPolygon"}, "id": "1", "properties": {"Acres": 0.15302244432552642, "Control": null, "CoverClass": "M", "Datafile": null, "GPS_Date": "2023-11-21 21:21:54+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Bob Rich", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 619.259861590103, "Shape_Length": 133.99975897571096, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "mature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-114.0351126116677, 46.80530415235615, -114.03499104481048, 46.805381710742296], "geometry": {"coordinates": [[[[-114.0351126116677, 46.80530415235615], [-114.03510163626001, 46.805356669003544], [-114.03499104481048, 46.805381710742296], [-114.03499954412956, 46.80531644581431], [-114.0351126116677, 46.80530415235615]]]], "type": "MultiPolygon"}, "id": "2", "properties": {"Acres": 0.013411885370562017, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2023-11-28 18:27:48+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 54.275974448351505, "Shape_Length": 30.790659377503196, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "immature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-114.08189643344409, 46.732249862987175, -114.08069350372826, 46.733115712562345], "geometry": {"coordinates": [[[[-114.08069350372826, 46.73231526108232], [-114.08189643344409, 46.732249862987175], [-114.08177542494293, 46.733115712562345], [-114.08079103061931, 46.732940100459494], [-114.08069350372826, 46.73231526108232]]]], "type": "MultiPolygon"}, "id": "3", "properties": {"Acres": 1.7108413457970943, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2023-12-05 16:32:18+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 6923.5292879464305, "Shape_Length": 336.3207231847293, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "immature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-114.08230185365852, 46.92101859197711, -114.07988963637794, 46.922259391031005], "geometry": {"coordinates": [[[[-114.0805396785488, 46.921212668790524], [-114.08053794062725, 46.9212191978242], [-114.08052120846385, 46.92120933006125], [-114.0805396785488, 46.921212668790524]]], [[[-114.08023411978562, 46.92101859197711], [-114.08053578725999, 46.92122729112821], [-114.08053794062725, 46.9212191978242], [-114.08230185365852, 46.922259391031005], [-114.08131821375542, 46.92217828268406], [-114.07988963637794, 46.92138680475926], [-114.08002197944255, 46.92119007148478], [-114.08023411978562, 46.92101859197711]]]], "type": "MultiPolygon"}, "id": "4", "properties": {"Acres": 1.9120848659372187, "Control": null, "CoverClass": "M", "Datafile": null, "GPS_Date": "2023-12-28 21:41:16+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Bob Rich", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 7737.932919891877, "Shape_Length": 478.8826717040477, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "immature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-113.95477873753839, 46.90887107474936, -113.95444035224378, 46.90912278025662], "geometry": {"coordinates": [[[[-113.95471126346908, 46.90912278025662], [-113.95444035224378, 46.90908293952949], [-113.95446228521051, 46.90887107474936], [-113.95477873753839, 46.90894590369601], [-113.95471126346908, 46.90912278025662]]]], "type": "MultiPolygon"}, "id": "5", "properties": {"Acres": 0.12467867548306813, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2024-01-08 20:27:30+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": "mix of ornamental and escaped trees", "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 504.5566986149797, "Shape_Length": 90.4941884889287, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "immature", "Woody_setting": "Ornamental", "map_method": null}, "type": "Feature"}, {"bbox": [-113.97857945015224, 46.880689671104975, -113.97807521941088, 46.88159903500288], "geometry": {"coordinates": [[[[-113.97828235086506, 46.88159903500288], [-113.97807521941088, 46.881546098220404], [-113.9780874430838, 46.881174282730846], [-113.97824014598564, 46.88097322338927], [-113.97825760447637, 46.880815728634325], [-113.97830925182909, 46.880689671104975], [-113.97847028392349, 46.88069643384133], [-113.97848439193993, 46.88082019230275], [-113.97857945015224, 46.880889506562795], [-113.97855064752407, 46.88110633462976], [-113.97855580402077, 46.881386457776884], [-113.9784805073525, 46.88156748134847], [-113.97828235086506, 46.88159903500288]]]], "type": "MultiPolygon"}, "id": "6", "properties": {"Acres": 0.6992361761673674, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2024-01-17 17:30:26+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": "immature \u0026 mature ornamentals ", "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 2829.708410297329, "Shape_Length": 243.8175969670247, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "mature", "Woody_setting": null, "map_method": null}, "type": "Feature"}, {"bbox": [-113.97674971730429, 46.86675866543279, -113.97635139627329, 46.86705738113035], "geometry": {"coordinates": [[[[-113.97664437832053, 46.86703974346361], [-113.97663367126643, 46.86705738113035], [-113.97637410104515, 46.86690925577681], [-113.97635139627329, 46.86684107820524], [-113.97640500340506, 46.86677537148186], [-113.97651274928089, 46.86675866543279], [-113.976573727919, 46.86682898536775], [-113.97663446625204, 46.8669018280922], [-113.97674971730429, 46.86697010012582], [-113.97664437832053, 46.86703974346361]]]], "type": "MultiPolygon"}, "id": "7", "properties": {"Acres": 0.12004516553061874, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2024-01-17 18:34:19+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 485.8055491056556, "Shape_Length": 93.5705067428042, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "immature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-113.93639478027733, 46.87736490313392, -113.93526187645162, 46.877993278207725], "geometry": {"coordinates": [[[[-113.93555394805995, 46.87736490313392], [-113.93586326807159, 46.87761649311828], [-113.93628844766246, 46.87753168261983], [-113.93639478027733, 46.87759739717547], [-113.93615796999416, 46.877722231416], [-113.93600399597648, 46.877769358263585], [-113.93582447695768, 46.87779355883951], [-113.93569604870453, 46.877903098364975], [-113.93567363048535, 46.877987927949135], [-113.93553581869163, 46.877993278207725], [-113.93545929603884, 46.87785160839089], [-113.93526187645162, 46.8778065201726], [-113.93528573614628, 46.877729430757604], [-113.93541989768723, 46.877737583123356], [-113.9355348502561, 46.877628822774604], [-113.9353394597245, 46.877448817708476], [-113.93555394805995, 46.87736490313392]]]], "type": "MultiPolygon"}, "id": "8", "properties": {"Acres": 0.5838212445337104, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2024-01-25 18:39:16+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 2362.640752974807, "Shape_Length": 276.7686362245703, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "mature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-113.92885906624181, 46.87319313327275, -113.92745136953185, 46.87359485791807], "geometry": {"coordinates": [[[[-113.92879144217339, 46.8733411528604], [-113.92760065240039, 46.87359485791807], [-113.92745136953185, 46.87353632418263], [-113.92763218827261, 46.8734827849079], [-113.92799038915948, 46.87337006448142], [-113.92825934688403, 46.87329217666364], [-113.92842359540015, 46.87328821231238], [-113.92858876372087, 46.87322901065897], [-113.9288152665156, 46.87319313327275], [-113.92885906624181, 46.87320977507987], [-113.92879144217339, 46.8733411528604]]]], "type": "MultiPolygon"}, "id": "9", "properties": {"Acres": 0.3752639298871049, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2024-01-25 19:01:39+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 1518.6392447586938, "Shape_Length": 239.1084007085047, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "mature", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}, {"bbox": [-113.92751885707453, 46.8735636756729, -113.92670200395709, 46.87395515364317], "geometry": {"coordinates": [[[[-113.92670200395709, 46.87394883365982], [-113.9269201060547, 46.87369336834692], [-113.92731360760064, 46.8735636756729], [-113.92751885707453, 46.87358164254865], [-113.92750046902373, 46.873716281925184], [-113.92703418944552, 46.87395515364317], [-113.92670200395709, 46.87394883365982]]]], "type": "MultiPolygon"}, "id": "10", "properties": {"Acres": 0.3637483359849236, "Control": null, "CoverClass": null, "Datafile": null, "GPS_Date": "2024-01-25 19:04:57+00:00", "Growth_Stage": null, "Label": null, "Mapped_by": "Layne Von Lanken - MCWD", "Note_": null, "Notes": null, "Ownership": null, "Photo": null, "Project": null, "Rcvr_Type": null, "Shape_Area": 1472.0372896179013, "Shape_Length": 166.60325038696334, "Site_Name": null, "Species": "ELAAN", "Woody_growth_stage": "seedling", "Woody_setting": "Esaped", "map_method": null}, "type": "Feature"}], "type": "FeatureCollection"});
+        geo_json_ec2fbfdb147f6079b6e7871a382c6b29.setStyle(function(feature) {return feature.properties.style;});
+
+        
+    
+            geo_json_ec2fbfdb147f6079b6e7871a382c6b29.addTo(map_c334f27bef9845059d5be80e7bf2e27f);
+        
+</script>
+</html>
