@@ -1,2 +1,2 @@
-# CapstoneProject
-The goal of this capstone project is to incoporate data from various sources including GIS, Satellite, and field data in an effort to map and predict the spread of invasive plant species in Missoula County.
+# Modeling the Spread of Russian Olive Tree's in Missoula County
+The goal of this project is to use data from Missoula County and the Montana Natural Heritage Program to model the current and future spread of the Russian Olive Tree in Missoula County.
