@@ -7,6 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 library(maxnet,warn.conflicts = FALSE)
+library(readxl)
+library(dplyr)
+library(sf)
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -16,8 +19,11 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r data}
-
+```{r data, warning=FALSE}
+#import observations
+survey.df <- read_excel("data/MTNHP_OBS_2025-01-28_11-22-38.xls.xlsx", 
+    sheet = "Observations")
+View(survey.df)
 
 ```
 
@@ -25,8 +31,20 @@ When you click the **Knit** button a document will be generated that includes bo
 
 You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r dataframe, echo=FALSE}
+
+#create a geopoint column
+df <- data.frame(
+  County <- survey.df$County,
+  Lat <- survey.df$Latitude,
+  Lon <- survey.df$Longitude
+)
+names(df)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Plot
+```{r plot, echo=FALSE}
+#create geopoint column
+sf_object <- st_as_sf(df, coords = c("Lon", "Lat"), crs = 4326)
+
+```
