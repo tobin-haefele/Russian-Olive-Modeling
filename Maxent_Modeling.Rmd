@@ -10,6 +10,10 @@ library(maxnet,warn.conflicts = FALSE)
 library(readxl)
 library(dplyr)
 library(sf)
+library(raster)
+library(geodata)
+library(terra)
+
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
@@ -23,7 +27,22 @@ When you click the **Knit** button a document will be generated that includes bo
 #import observations
 survey.df <- read_excel("data/MTNHP_OBS_2025-01-28_11-22-38.xls.xlsx", 
     sheet = "Observations")
-View(survey.df)
+#import climate data
+climate_data <- geodata::worldclim_country("United States of America", var='bio',path='data/',res=2.5)
+
+print(names(climate_data))
+plot(climate_data[["wc2.1_30s_bio_1"]], main = "Annual Mean Temperature")
+
+# Define the extent for the contiguous USA
+usa_extent <- ext(-125, -65, 25, 50)
+
+# Crop climate_data to the USA extent
+usa_climate_data <- crop(climate_data, usa_extent)
+
+# Print the cropped data to check
+print(usa_climate_data)
+
+plot(usa_climate_data[[1]], main = "Annual Mean Temperature (USA)")
 
 ```
 
@@ -39,12 +58,43 @@ df <- data.frame(
   Lat <- survey.df$Latitude,
   Lon <- survey.df$Longitude
 )
-names(df)
+summary(df)
+
+#get geographic extent of data
+max_lat <- ceiling(max(df$Lat....survey.df.Latitude))
+min_lat <- floor(min(df$Lat....survey.df.Latitude))
+max_lon <- ceiling(max(df$Lon....survey.df.Longitude))
+min_lon <- floor(min(df$Lon....survey.df.Longitude))
+
+#extent 
+geo_extent <- ext(x=c(min_lon,max_lon,min_lat,max_lat))
+
+
+#world map download
+world_map <- world(resolution=3,
+                   path = "data/")
+#crop map
+my_map <- crop(x = world_map, y = geo_extent)
+
+plot(my_map,
+     axes=TRUE,
+     col = "grey95")
+
+points(x = df$Lon....survey.df.Longitude,
+       y = df$Lat....survey.df.Latitude,
+       col = 'olivedrab',
+       pch = 20,
+       cex = 0.75
+       )
+
 ```
 
 ## Plot
 ```{r plot, echo=FALSE}
-#create geopoint column
-sf_object <- st_as_sf(df, coords = c("Lon", "Lat"), crs = 4326)
+sample_extent <- geo_extent * 1.25
+
+climate_data <- crop(x=climate_data, y = sample_extent)
+
+plot(climate_data[[1]])
 
 ```
