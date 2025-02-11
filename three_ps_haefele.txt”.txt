@@ -24,3 +24,16 @@ I hope to have a basic model completed by next weeks post, whether it's logistic
 
 o How many hours did you spend working on your Capstone since last week’s post?'
 I would say around 15 hours again (maybe slightly more).
+
+3P'S 1/28/2025 Week 1
+o Progress: What have you accomplished since last week’s post?
+As this is the first post, I have almost finished collecting all the data I need for my modeling efforts. I also completed some basic testing of importing data and using some new packages I am not familiar with.
+
+o Problems: What are you stuck on or struggling with?
+I'm not stuck on anything yet.
+
+o Plans: What do you intend to accomplish between now and next week’s post?
+I intend to meet with someone at the Spatial Analysis lab to help continue my research into the best way to approach this type of modeling (R, Python, or other). In the meantime I will continue testing on Python as that is what I have gotten to work so far.
+
+o How many hours did you spend working on your Capstone since last week’s post?'
+Since last week I would say I worked on it for around 15 hours or so.
