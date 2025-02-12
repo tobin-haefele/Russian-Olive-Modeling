@@ -13,88 +13,137 @@ library(sf)
 library(raster)
 library(geodata)
 library(terra)
+library(corrplot)
+library(arcgisbinding)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Import data
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r data, warning=FALSE}
+```{r data import, warning=FALSE}
 #import observations
-survey.df <- read_excel("data/MTNHP_OBS_2025-01-28_11-22-38.xls.xlsx", 
+survey.df <- read_excel("data/MTNHP_RussianOlive.xlsx", 
     sheet = "Observations")
-#import climate data
-climate_data <- geodata::worldclim_country("United States of America", var='bio',path='data/',res=2.5)
 
-print(names(climate_data))
-plot(climate_data[["wc2.1_30s_bio_1"]], main = "Annual Mean Temperature")
+#import climate data 
+climate_data <- geodata::worldclim_tile(11, 12, var = "bio", res = 0.5, path = "data/") #not sure the tile is correct
 
-# Define the extent for the contiguous USA
-usa_extent <- ext(-125, -65, 25, 50)
-
-# Crop climate_data to the USA extent
-usa_climate_data <- crop(climate_data, usa_extent)
-
-# Print the cropped data to check
-print(usa_climate_data)
-
-plot(usa_climate_data[[1]], main = "Annual Mean Temperature (USA)")
+#import montana shapefile
+mt_shape <- st_read("data/MontanaStateBoundary_shp/StateofMontana.shp")
 
 ```
 
-## Including Plots
+## Cleaning data
+```{r data cleaning, echo=FALSE}
 
-You can also embed plots, for example:
+#remove spaces from column names
+colnames(survey.df) <- gsub(" ", "_", colnames(survey.df))
 
-```{r dataframe, echo=FALSE}
+#rename spatial precision column for easier access
+colnames(survey.df)[colnames(survey.df) == "Spatial_Precision_(meters)"] <- "Spatial_Precision"
 
-#create a geopoint column
-df <- data.frame(
-  County <- survey.df$County,
-  Lat <- survey.df$Latitude,
-  Lon <- survey.df$Longitude
-)
-summary(df)
+#transform montana shapefile to crs
+mt_shape <- st_transform(mt_shape, crs = 4326)
 
-#get geographic extent of data
-max_lat <- ceiling(max(df$Lat....survey.df.Latitude))
-min_lat <- floor(min(df$Lat....survey.df.Latitude))
-max_lon <- ceiling(max(df$Lon....survey.df.Longitude))
-min_lon <- floor(min(df$Lon....survey.df.Longitude))
+# Crop the climate data to the extent of the Montana shapefile
+climate_data_cropped <- crop(climate_data, mt_shape)
 
-#extent 
-geo_extent <- ext(x=c(min_lon,max_lon,min_lat,max_lat))
+# Mask the cropped climate data to the Montana state boundary
+climate_data_masked <- mask(climate_data_cropped, mt_shape)
 
-
-#world map download
-world_map <- world(resolution=3,
-                   path = "data/")
-#crop map
-my_map <- crop(x = world_map, y = geo_extent)
-
-plot(my_map,
-     axes=TRUE,
-     col = "grey95")
-
-points(x = df$Lon....survey.df.Longitude,
-       y = df$Lat....survey.df.Latitude,
-       col = 'olivedrab',
-       pch = 20,
-       cex = 0.75
-       )
+#remove observations where spatial precision is > 800 
+survey.df.filtered <- survey.df[survey.df$Spatial_Precision< 800,]
 
 ```
 
-## Plot
+## Testing cleaned data
 ```{r plot, echo=FALSE}
-sample_extent <- geo_extent * 1.25
 
-climate_data <- crop(x=climate_data, y = sample_extent)
+#create a small data frame with the lat and lon of the observations
+df <- data.frame(
+  "Lat" = survey.df.filtered$Latitude,
+  "Lon" = survey.df.filtered$Longitude
+)
 
-plot(climate_data[[1]])
+#convert to sf object
+df <- st_as_sf(df, coords = c("Lon", "Lat"), crs = 4326)
+
+#plot the points
+plot(climate_data_masked[[3]], main = "Annual Mean Temperature in Montana")
+plot(st_geometry(mt_shape), add = TRUE, border = "red")
+plot(df, add = TRUE, pch = 20, col = "red")
+
 
 ```
+
+## Prepping the data for modeling
+```{r model prep, echo=FALSE}
+set.seed(1000)
+
+#Create pseudo-absence points within the Montana boundary
+pseudo_absence <- st_sample(mt_shape, size = (nrow(df)*2), type = "random") %>% 
+  st_as_sf()
+
+#add pa column to pseudo-absence points and df
+df <- df %>% mutate(pa = 1)
+pseudo_absence <- pseudo_absence %>% mutate(pa = 0)
+
+pseudo_absence <- pseudo_absence %>%
+  rename(geometry = x)
+
+#combine the two dataframes
+combined_df <- rbind(df,pseudo_absence)
+
+#extract the climate data values for the points
+climate_values <- extract(climate_data_masked, combined_df)
+
+#loop through climatte values and rename all columns after the first
+for(i in 2:20){
+  colnames(climate_values)[i] <- paste("bio", i-1, sep = "")
+}
+
+#combine the climate values with the points
+combined_df <- cbind(combined_df, climate_values)
+```
+
+## Basic modeling
+```{r model, echo=FALSE}
+# create correlation matrix
+df.cor.climate <- st_drop_geometry(combined_df)
+df.cor.climate <- df.cor.climate[3:21]
+df.cor.climate <- na.omit(df.cor.climate)
+df.cor.climate <- df.cor.climate[, sapply(df.cor.climate, is.numeric)]
+climate.cor <- cor(df.cor.climate)
+
+#view the correlation matrix
+corrplot(climate.cor, method = "number")
+
+#create test model
+mod1.LR <- glm(as.factor(pa) ~ bio1 + bio2 + bio3 + bio4 + bio5 + bio6 + bio7 + bio8 + bio9 + bio10 + bio11 + bio12 + bio13 + bio14 + bio15 + bio16 + bio17 + bio18 + bio19, data = combined_df, family = binomial)
+
+#predict the model
+mod1.pred <- predict(mod1.LR, type = "response")
+
+#summarize the model
+summary(mod1.LR)
+
+```
+
+### Potential Variables to include
+- Wetland Riparian (land cover )
+- Maximum Summer Temp (climate)
+- Frost Free Days (climate)
+-  Anthropogenic Influence (land cover)
+- Introduced Vegetation (land cover)
+- Soil pH (soil)
+- Forest - Conifer (land cover)
+- Bulk Density (soil)
+- Degree Days (climate)
+-  Distance to Water Edge (hydrography)
+
+### Data sets 
+https://geoinfo.msl.mt.gov/msdi/land_use_land_cover
+https://geoinfo.msl.mt.gov/msdi/climate/
+https://prism.oregonstate.edu/
+https://doi.org/10.18113/S1KW2H (soil)
