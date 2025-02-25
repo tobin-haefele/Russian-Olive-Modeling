@@ -14,7 +14,7 @@ library(raster)
 library(geodata)
 library(terra)
 library(corrplot)
-library(arcgisbinding)
+library(httr)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -31,6 +31,32 @@ climate_data <- geodata::worldclim_tile(11, 12, var = "bio", res = 0.5, path = "
 
 #import montana shapefile
 mt_shape <- st_read("data/MontanaStateBoundary_shp/StateofMontana.shp")
+
+# Connect to ArcGIS Server
+url <- parse_url("https://gisservicemt.gov/arcgis/rest/services")
+url$path <- paste(url$path, "MSDI_Framework/LandCover/MapServer/2/query", sep = "/")
+url$query <- list(
+  where = "1=1",          # Return all features
+  outFields = "*",        # Include all fields
+  f = "geojson",          # Request GeoJSON format
+  returnGeometry = "true" # Ensure geometry is returned
+)
+
+
+
+# Define the query URL
+url <- "https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/WetlandsRiparian/MapServer/0"
+params <- list(
+  where = "1=1",
+  outFields = "*",
+  f = "geojson"
+)
+
+# Send the request
+response <- GET(url, query = params)
+data <- st_read(content(response, "text"))
+print(data)
+
 
 ```
 
