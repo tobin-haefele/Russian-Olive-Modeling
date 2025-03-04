@@ -22,42 +22,21 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Import data
 
 ```{r data import, warning=FALSE}
-#import observations
+#import observations for state
 survey.df <- read_excel("data/MTNHP_RussianOlive.xlsx", 
     sheet = "Observations")
 
-#import climate data 
-climate_data <- geodata::worldclim_tile(11, 12, var = "bio", res = 0.5, path = "data/") #not sure the tile is correct
+#import gdb for missoula
+missoula.df <- sf::st_read(dsn= "data/Msla_Cnty_Russian_olive.gdb")
+
 
 #import montana shapefile
 mt_shape <- st_read("data/MontanaStateBoundary_shp/StateofMontana.shp")
 
-# Connect to ArcGIS Server
-url <- parse_url("https://gisservicemt.gov/arcgis/rest/services")
-url$path <- paste(url$path, "MSDI_Framework/LandCover/MapServer/2/query", sep = "/")
-url$query <- list(
-  where = "1=1",          # Return all features
-  outFields = "*",        # Include all fields
-  f = "geojson",          # Request GeoJSON format
-  returnGeometry = "true" # Ensure geometry is returned
-)
+#import climate data 
+climate_data <- geodata::worldclim_country("USA", var = "bio", res = 0.5, path = "data/") #not sure the tile is correct
 
-
-
-# Define the query URL
-url <- "https://gisservicemt.gov/arcgis/rest/services/MSDI_Framework/WetlandsRiparian/MapServer/0"
-params <- list(
-  where = "1=1",
-  outFields = "*",
-  f = "geojson"
-)
-
-# Send the request
-response <- GET(url, query = params)
-data <- st_read(content(response, "text"))
-print(data)
-
-
+print(climate_data)
 ```
 
 ## Cleaning data
@@ -79,7 +58,7 @@ climate_data_cropped <- crop(climate_data, mt_shape)
 climate_data_masked <- mask(climate_data_cropped, mt_shape)
 
 #remove observations where spatial precision is > 800 
-survey.df.filtered <- survey.df[survey.df$Spatial_Precision< 800,]
+survey.df.filtered <- survey.df[survey.df$Spatial_Precision < 800,]
 
 ```
 
@@ -124,13 +103,15 @@ combined_df <- rbind(df,pseudo_absence)
 #extract the climate data values for the points
 climate_values <- extract(climate_data_masked, combined_df)
 
-#loop through climatte values and rename all columns after the first
+#loop through climate values and rename all columns after the first
 for(i in 2:20){
   colnames(climate_values)[i] <- paste("bio", i-1, sep = "")
 }
 
 #combine the climate values with the points
 combined_df <- cbind(combined_df, climate_values)
+
+names(combined_df)
 ```
 
 ## Basic modeling
@@ -143,7 +124,7 @@ df.cor.climate <- df.cor.climate[, sapply(df.cor.climate, is.numeric)]
 climate.cor <- cor(df.cor.climate)
 
 #view the correlation matrix
-corrplot(climate.cor, method = "number")
+corrplot(climate.cor)
 
 #create test model
 mod1.LR <- glm(as.factor(pa) ~ bio1 + bio2 + bio3 + bio4 + bio5 + bio6 + bio7 + bio8 + bio9 + bio10 + bio11 + bio12 + bio13 + bio14 + bio15 + bio16 + bio17 + bio18 + bio19, data = combined_df, family = binomial)
@@ -160,7 +141,7 @@ summary(mod1.LR)
 - Wetland Riparian (land cover )
 - Maximum Summer Temp (climate)
 - Frost Free Days (climate)
--  Anthropogenic Influence (land cover)
+- Anthropogenic Influence (land cover)
 - Introduced Vegetation (land cover)
 - Soil pH (soil)
 - Forest - Conifer (land cover)

@@ -1,3 +1,16 @@
+3 P's 3/4/2025 Week 5
+o Progress: What have you accomplished since last week’s post?
+I managed to finally tack on the layers I need for each data point in my dataset, now I can easily add/remove any variables from the set. This was what was holding up much of my project so it should be relatively smooth now (knock on wood). 
+
+o Problems: What are you stuck on or struggling with?
+I think the only problem I have currently is just some feedback on things the city might want out of the model. This of course is solved by meeting with them again.
+
+o Plans: What do you intend to accomplish between now and next week’s post?
+I hope (schedule permitting) to meet with the city to get some feedback on what they would like to see out of the model or if they have a baseline they like to use. It would also be good to confirm what data sources they use (if not internal).
+
+o How many hours did you spend working on your Capstone since last week’s post?'
+Had some longer hours in this one, probably around 20 hours.
+
 3 P's 2/25/2025 Week 4
 o Progress: What have you accomplished since last week’s post?
 I was able to manually add soil data into my model, I also tinkered with connecting to the montana state data library to avoid having to download and move files manually.
