@@ -11,10 +11,11 @@ library(readxl)
 library(dplyr)
 library(sf)
 library(raster)
-library(geodata)
-library(terra)
 library(corrplot)
-library(httr)
+library(ggplot2)
+library(tidymodels)
+library(blockCV)
+library(randomForest)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -22,105 +23,57 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Import data
 
 ```{r data import, warning=FALSE}
-#import observations for state
-survey.df <- read_excel("data/MTNHP_RussianOlive.xlsx", 
-    sheet = "Observations")
+#import observations for missoula county field survey
+survey.df <- read.csv("data/CombinedDataset.csv")
 
-#import gdb for missoula
-missoula.df <- sf::st_read(dsn= "data/Msla_Cnty_Russian_olive.gdb")
+#import missoula county shapefile
+msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp"
+)
 
-
-#import montana shapefile
-mt_shape <- st_read("data/MontanaStateBoundary_shp/StateofMontana.shp")
-
-#import climate data 
-climate_data <- geodata::worldclim_country("USA", var = "bio", res = 0.5, path = "data/") #not sure the tile is correct
-
-print(climate_data)
+msl_shape <- msl_shape %>% filter(NAME == "MISSOULA")
 ```
 
 ## Cleaning data
 ```{r data cleaning, echo=FALSE}
+names(survey.df)
 
 #remove spaces from column names
 colnames(survey.df) <- gsub(" ", "_", colnames(survey.df))
 
-#rename spatial precision column for easier access
-colnames(survey.df)[colnames(survey.df) == "Spatial_Precision_(meters)"] <- "Spatial_Precision"
+msl_shape <- st_transform(msl_shape, crs = 4326)
 
-#transform montana shapefile to crs
-mt_shape <- st_transform(mt_shape, crs = 4326)
-
-# Crop the climate data to the extent of the Montana shapefile
-climate_data_cropped <- crop(climate_data, mt_shape)
-
-# Mask the cropped climate data to the Montana state boundary
-climate_data_masked <- mask(climate_data_cropped, mt_shape)
-
-#remove observations where spatial precision is > 800 
-survey.df.filtered <- survey.df[survey.df$Spatial_Precision < 800,]
+# Convert survey.df to an sf object
+survey_sf <- st_as_sf(survey.df, coords = c("Longitude", "Latitude"), crs = 4326)
 
 ```
 
 ## Testing cleaned data
 ```{r plot, echo=FALSE}
 
-#create a small data frame with the lat and lon of the observations
-df <- data.frame(
-  "Lat" = survey.df.filtered$Latitude,
-  "Lon" = survey.df.filtered$Longitude
-)
-
-#convert to sf object
-df <- st_as_sf(df, coords = c("Lon", "Lat"), crs = 4326)
-
-#plot the points
-plot(climate_data_masked[[3]], main = "Annual Mean Temperature in Montana")
-plot(st_geometry(mt_shape), add = TRUE, border = "red")
-plot(df, add = TRUE, pch = 20, col = "red")
+#plot imported points 
+ggplot() +
+  geom_sf(data = msl_shape) + 
+  geom_sf(data=survey_sf)
 
 
 ```
 
 ## Prepping the data for modeling
 ```{r model prep, echo=FALSE}
-set.seed(1000)
 
-#Create pseudo-absence points within the Montana boundary
-pseudo_absence <- st_sample(mt_shape, size = (nrow(df)*2), type = "random") %>% 
-  st_as_sf()
+set.seed(1234)
 
-#add pa column to pseudo-absence points and df
-df <- df %>% mutate(pa = 1)
-pseudo_absence <- pseudo_absence %>% mutate(pa = 0)
+#split dataset into training/testing 
+sb <- cv_spatial(survey_sf$PA)
 
-pseudo_absence <- pseudo_absence %>%
-  rename(geometry = x)
 
-#combine the two dataframes
-combined_df <- rbind(df,pseudo_absence)
-
-#extract the climate data values for the points
-climate_values <- extract(climate_data_masked, combined_df)
-
-#loop through climate values and rename all columns after the first
-for(i in 2:20){
-  colnames(climate_values)[i] <- paste("bio", i-1, sep = "")
-}
-
-#combine the climate values with the points
-combined_df <- cbind(combined_df, climate_values)
-
-names(combined_df)
 ```
 
 ## Basic modeling
 ```{r model, echo=FALSE}
 # create correlation matrix
 df.cor.climate <- st_drop_geometry(combined_df)
-df.cor.climate <- df.cor.climate[3:21]
 df.cor.climate <- na.omit(df.cor.climate)
-df.cor.climate <- df.cor.climate[, sapply(df.cor.climate, is.numeric)]
 climate.cor <- cor(df.cor.climate)
 
 #view the correlation matrix
