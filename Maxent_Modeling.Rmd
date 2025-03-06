@@ -16,6 +16,7 @@ library(ggplot2)
 library(tidymodels)
 library(blockCV)
 library(randomForest)
+library(pdp)
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -31,24 +32,40 @@ msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp"
 )
 
 msl_shape <- msl_shape %>% filter(NAME == "MISSOULA")
+
+
+#drop CID column
+survey.df <- subset(survey.df, select = -c(CID, EVT_NAME_M,SNAME,GNAME))
 ```
 
 ## Cleaning data
-```{r data cleaning, echo=FALSE}
-names(survey.df)
+
+```{r data cleaning, echo=FALSE, message=FALSE, warning=FALSE}
+
+
+
+```
+
+## Testing cleaned data
+
+```{r plot, echo=FALSE}
+
 
 #remove spaces from column names
 colnames(survey.df) <- gsub(" ", "_", colnames(survey.df))
 
 msl_shape <- st_transform(msl_shape, crs = 4326)
 
+
 # Convert survey.df to an sf object
 survey_sf <- st_as_sf(survey.df, coords = c("Longitude", "Latitude"), crs = 4326)
 
-```
+#convert PA to factor
+survey_sf$PA <- as.factor(survey_sf$PA)
 
-## Testing cleaned data
-```{r plot, echo=FALSE}
+survey_sf <- survey_sf %>%
+  mutate_if(is.character, as.factor)
+
 
 #plot imported points 
 ggplot() +
@@ -59,51 +76,63 @@ ggplot() +
 ```
 
 ## Prepping the data for modeling
+
 ```{r model prep, echo=FALSE}
 
 set.seed(1234)
 
 #split dataset into training/testing 
-sb <- cv_spatial(survey_sf$PA)
-
+sb <- cv_spatial(x = survey_sf,
+                column = "PA",
+                k = 5,
+                selection = "random",
+                 )
 
 ```
 
 ## Basic modeling
+
 ```{r model, echo=FALSE}
-# create correlation matrix
-df.cor.climate <- st_drop_geometry(combined_df)
-df.cor.climate <- na.omit(df.cor.climate)
-climate.cor <- cor(df.cor.climate)
+# Train and validate a model using the folds
+test_table <- survey_sf
+test_table$Pred <- "NA"
 
-#view the correlation matrix
-corrplot(climate.cor)
+for(k in seq_len(length(folds))){
+  # Extracting the training and testing indices
+  trainSet <- unlist(folds[[k]][1]) # training set indices; first element
+  testSet <- unlist(folds[[k]][2]) # testing set indices; second element
 
-#create test model
-mod1.LR <- glm(as.factor(pa) ~ bio1 + bio2 + bio3 + bio4 + bio5 + bio6 + bio7 + bio8 + bio9 + bio10 + bio11 + bio12 + bio13 + bio14 + bio15 + bio16 + bio17 + bio18 + bio19, data = combined_df, family = binomial)
+  # Train a random forest model
+  rf <- randomForest(PA ~ ., st_drop_geometry(survey_sf[trainSet, ]), ntree = 500, importance = TRUE)
 
-#predict the model
-mod1.pred <- predict(mod1.LR, type = "response")
-
-#summarize the model
-summary(mod1.LR)
-
+  # Predict the test set and store probabilities
+  test_table$Pred[testSet] <- predict(rf, st_drop_geometry(survey_sf[testSet, ]), type = "prob")[,2]
+}
 ```
 
-### Potential Variables to include
-- Wetland Riparian (land cover )
-- Maximum Summer Temp (climate)
-- Frost Free Days (climate)
-- Anthropogenic Influence (land cover)
-- Introduced Vegetation (land cover)
-- Soil pH (soil)
-- Forest - Conifer (land cover)
-- Bulk Density (soil)
-- Degree Days (climate)
--  Distance to Water Edge (hydrography)
+```{r results}
+#view the RF 
+importance_scores <- importance(rf)
+print(importance_scores)
 
-### Data sets 
-https://geoinfo.msl.mt.gov/msdi/land_use_land_cover
-https://geoinfo.msl.mt.gov/msdi/climate/
-https://prism.oregonstate.edu/
-https://doi.org/10.18113/S1KW2H (soil)
+varImpPlot(rf)
+
+
+
+```
+### Potential Variables to include
+
+-   Wetland Riparian (land cover )
+-   Maximum Summer Temp (climate)
+-   Frost Free Days (climate)
+-   Anthropogenic Influence (land cover)
+-   Introduced Vegetation (land cover)
+-   Soil pH (soil)
+-   Forest - Conifer (land cover)
+-   Bulk Density (soil)
+-   Degree Days (climate)
+-   Distance to Water Edge (hydrography)
+
+### Data sets
+
+<https://geoinfo.msl.mt.gov/msdi/land_use_land_cover> <https://geoinfo.msl.mt.gov/msdi/climate/> <https://prism.oregonstate.edu/> <https://doi.org/10.18113/S1KW2H> (soil)
