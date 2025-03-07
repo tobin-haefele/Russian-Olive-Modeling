@@ -1,2 +1,0 @@
-# Modeling the Spread of Russian Olive Tree's in Missoula County
-The goal of this project is to use data from Missoula County and the Montana Natural Heritage Program to model the current and future spread of the Russian Olive Tree in Missoula County.
