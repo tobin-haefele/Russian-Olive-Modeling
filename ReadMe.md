@@ -15,7 +15,7 @@
 
 ---
 
-<p align="center"> The Missoula Olive Watch is a project focused on tracking the spread of Elaeagnus angustifolia (Russian Olive) in Missoula County, Montana. 
+<p align="center"> The Missoula Olive Watch is a project focused on tracking the spread of the invasive species Elaeagnus angustifolia (Russian Olive) in Missoula County, Montana. 
     <br> 
 </p>
 
