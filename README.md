@@ -96,6 +96,6 @@ At this point there are several caveats to the modeling process that will have t
 - [@tobin-haefele](www.github.com/tobin-haefele) - Initial Author and Developer
 
 ## Acknowledgements
-- Missoula County Ecology Extension Office ([text](https://missoulaeduplace.org/)) - Provided data and guidance for the project
-- University of Montana Spatial Analysis Lab ([text](https://www.umt.edu/spatial-analysis-lab/default.php)) - Provided guidance and resources for the project
-- Montana Natural Heritage Program ([text](https://mtnhp.org/)) - Provided data for the project
+- ([Missoula County Ecology Extension Office ](https://missoulaeduplace.org/)) - Provided data and guidance for the project
+- ([University of Montana Spatial Analysis Lab](https://www.umt.edu/spatial-analysis-lab/default.php)) - Provided guidance and resources for the project
+- ([Montana Natural Heritage Program](https://mtnhp.org/)) - Provided data for the project
