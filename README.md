@@ -29,6 +29,10 @@
 ## About <a name = "about"></a>
 This project is a collaboration between myself and the Missoula County Ecology Extension Office. The goal of the project is to create a model that can predict the spread of Russian Olive in Missoula County. The model will be used to inform land management decisions and help prioritize areas for removal.
 
+Currently the project is in the modeling phase. The model is being developed in R and will use a random forest model to predict the spread of Russian Olive. The model will be trained on data collected by the Missoula County Ecology Extension Office and the Montana Natural Heritage Program. The model will be validated using a block cross validation method and the results will be visualized using ggplot2 and sf.
+
+In the future the model will be integrated with ArcGIS to allow for easier data import and export. There will also be a web interface that will allow users to explore the output of the model and visualize potential areas of interest for Russian Olive removal and mitigation.
+
 ## Getting Started <a name = "getting_started"></a>
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
 
@@ -96,6 +100,6 @@ At this point there are several caveats to the modeling process that will have t
 - [@tobin-haefele](www.github.com/tobin-haefele) - Initial Author and Developer
 
 ## Acknowledgements
-- ([Missoula County Ecology Extension Office ](https://missoulaeduplace.org/)) - Provided data and guidance for the project
-- ([University of Montana Spatial Analysis Lab](https://www.umt.edu/spatial-analysis-lab/default.php)) - Provided guidance and resources for the project
-- ([Montana Natural Heritage Program](https://mtnhp.org/)) - Provided data for the project
+- [Missoula County Ecology Extension Office ](https://missoulaeduplace.org/) - Provided data and guidance for the project
+- [University of Montana Spatial Analysis Lab](https://www.umt.edu/spatial-analysis-lab/default.php) - Provided guidance and resources for the project
+- [Montana Natural Heritage Program](https://mtnhp.org/) - Provided data for the project
