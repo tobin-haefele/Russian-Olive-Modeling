@@ -1,4 +1,4 @@
-3 P's 3/4/2025 Week 5
+3 P's 3/11/2025 Week 6
 o Progress: What have you accomplished since last week’s post?
 I scheduled a meeting with the city, also cleaned up the github repo and polished the modeling code up. I started to work on a data import R file but that is not a big priority right now.
 
