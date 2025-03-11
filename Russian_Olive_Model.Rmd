@@ -52,7 +52,7 @@ survey_sf <- st_as_sf(russian_olive_df,
 # convert PA to factor for random forest model
 survey_sf$PA <- as.factor(survey_sf$PA)
 
-# convert all character columsn to factors for correct modeling
+# convert all character columns to factors for proper modeling
 survey_sf <- survey_sf %>%
   mutate_if(is.character, as.factor)
 ```
@@ -60,7 +60,7 @@ survey_sf <- survey_sf %>%
 ## Testing cleaned data
 
 ```{r plot, echo=FALSE}
-# plot imported points
+# plot imported points to test
 ggplot() +
   geom_sf(data = msl_shape) +
   geom_sf(data = survey_sf, aes(color = survey_sf$PA))
@@ -69,6 +69,7 @@ ggplot() +
 ## Prepping the data for modeling
 
 ```{r model prep, echo=FALSE}
+#set seed for reproducibility
 set.seed(1234)
 
 # split data into training/testing accounting for spatial autocorrelation
@@ -79,6 +80,7 @@ sb <- cv_spatial(
   selection = "random",
 )
 
+# store the folds for later use
 folds <- sb$folds_list
 ```
 
@@ -109,12 +111,12 @@ for (k in seq_len(length(folds))) {
 ```
 
 ```{r results}
-# view the RF
+# view the variable importance scores
 importance_scores <- importance(rf)
 print(importance_scores)
-
 varImpPlot(rf)
 
+#view the confusion matrix
 rf$confusion
 
 # plot the results
@@ -127,8 +129,8 @@ ggplot(test_table) +
   ) +
   theme_minimal()
 
-# pdp plot of factors
-pd <- pdp::partial(rf, pred.var = "NEAR_DIST", plot = FALSE)
+# pdp plot of each factors importance
+pd <- pdp::partial(rf, pred.var = "LEVEL2", plot = FALSE)
 
 plotPartial(pd)
 ```
