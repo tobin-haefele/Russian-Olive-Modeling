@@ -34,7 +34,7 @@ msl_shape <- msl_shape %>% filter(NAME == "MISSOULA")
 
 # drop CID column
 russian_olive_df <- subset(russian_olive_df,
-  select = -c(CID, EVT_NAME_M, SNAME, GNAME)
+  select = -c(CID, EVT_NAME_M, SNAME, GNAME, RED, GREEN, BLUE)
 )
 
 # remove spaces from column names
@@ -63,7 +63,7 @@ survey_sf <- survey_sf %>%
 # plot imported points to test
 ggplot() +
   geom_sf(data = msl_shape) +
-  geom_sf(data = survey_sf, aes(color = survey_sf$PA))
+  geom_sf(data = survey_sf, aes(color = PA))
 ```
 
 ## Prepping the data for modeling
@@ -76,7 +76,7 @@ set.seed(1234)
 sb <- cv_spatial(
   x = survey_sf,
   column = "PA",
-  k = 5,
+  k = 10,
   selection = "random",
 )
 
@@ -103,7 +103,7 @@ for (k in seq_len(length(folds))) {
   )
 
   # Predict the test set and store probabilities
-  test_table$Pred[test_Set] <- predict(rf,
+  test_table$Pred[test_set] <- predict(rf,
     st_drop_geometry(survey_sf[test_set, ]),
     type = "prob"
   )[, 2]
@@ -130,10 +130,20 @@ ggplot(test_table) +
   theme_minimal()
 
 # pdp plot of each factors importance
-pd <- pdp::partial(rf, pred.var = "LEVEL2", plot = FALSE)
+pd <- pdp::partial(rf, pred.var = "NEAR_DIST", plot = FALSE)
 
 plotPartial(pd)
 ```
+
+```{r data output}
+#convert sf back to a df, keeping coordinates for plotting
+predictions_df <- as.data.frame(test_table) %>%
+  mutate(lon = sf::st_coordinates(geometry)[,1],
+         lat = sf::st_coordinates(geometry)[,2])
+  
+
+```
+
 ### Potential Variables to include
 
 -   Wetland Riparian (land cover )
