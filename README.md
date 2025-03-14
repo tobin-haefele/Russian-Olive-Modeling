@@ -89,9 +89,9 @@ At this point there are several caveats to the modeling process that will have t
 
 
 ## To Do
-- [ ] Add connection to ArcGIS for data import
-- [ ] Add connection to ArcGIS for shapefile import
-- [ ] Add connection to ArcGIS for model export
+- [x] Add connection to ArcGIS for data import
+- [x] Add connection to ArcGIS for shapefile import
+- [x] Add connection to ArcGIS for model export
 - [ ] Add more raster data
 - [ ] Add more visualizations
 - [ ] Add more documentation
