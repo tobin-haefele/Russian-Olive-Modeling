@@ -1,0 +1,14 @@
+---
+title: "Russian Olive in Missoula County"
+author: "Tobin Haefele"
+date: "Q2 2025"
+output: html_document
+---
+
+# Introduction
+
+Explanation of the project and it's relavance to Missoula County Ecology Extension and Weed Board.
+
+This report is intended to inform the Missoula County Weed Board and Ecology Extension about the current state of Russian Olive (Elaeagnus angustifolia) in Missoula County. 
+
+I intend to answer the question 
