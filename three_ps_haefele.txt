@@ -1,3 +1,16 @@
+3 P's 3/18/2025 Week 7
+o Progress: What have you accomplished since last week’s post?
+I spent some time compiling the rest of the variables I thought were relevant to my project. I also had a meeting with the city to get some clarity on what type of output they're looking for, and the overall process they go through when listing a species as invasive which was helpful. Finally I began a rough draft of my written product.
+
+o Problems: What are you stuck on or struggling with?
+I don't think I have anything I'm stuck on at the moment.
+
+o Plans: What do you intend to accomplish between now and next week’s post?
+Obviously I want to have my written product complete, I also want to explore the ArcGIS story maps as a digital product outlet potentially. 
+
+o How many hours did you spend working on your Capstone since last week’s post?'
+I think around 20 hours or more.
+
 3 P's 3/11/2025 Week 6
 o Progress: What have you accomplished since last week’s post?
 I scheduled a meeting with the city, also cleaned up the github repo and polished the modeling code up. I started to work on a data import R file but that is not a big priority right now.
