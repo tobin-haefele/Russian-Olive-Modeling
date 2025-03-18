@@ -146,16 +146,27 @@ predictions_df <- as.data.frame(test_table) %>%
 
 ### Potential Variables to include
 
--   Wetland Riparian (land cover )
--   Maximum Summer Temp (climate)
--   Frost Free Days (climate)
--   Anthropogenic Influence (land cover)
--   Introduced Vegetation (land cover)
--   Soil pH (soil)
--   Forest - Conifer (land cover)
--   Bulk Density (soil)
--   Degree Days (climate)
--   Distance to Water Edge (hydrography)
+-   [x] Wetland Riparian (land cover )
+-   [x] Maximum Summer Temp (climate)
+-   [x] Frost Free Days (climate)
+-   [x] Anthropogenic Influence (land cover)
+-   [x] Introduced Vegetation (land cover)
+-   [ ] Soil pH (soil)
+-   [x] Forest - Conifer (land cover)
+-   [ ] Bulk Density (soil)
+-   [x] Degree Days (climate)
+-   [ ] Distance to Water Edge (hydrography)?
+
+### To Do
+
+-   [ ]  Visualization of current spread (potentially past?), also ornamental vs received (grown naturally)
+-   [ ]  add above variables to model
+-   [ ]  clean MT state data to under 800 spatial precision
+-   [ ]  some kind of polygonal/area analysis
+-   [ ]  Create outline for paper
+-   [ ]  Write paper
+-   [ ]  Try different modeling methods
+-   [ ] Lay out story map
 
 ### Data sets
 
