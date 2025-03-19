@@ -163,7 +163,7 @@ predictions_df <- as.data.frame(test_table) %>%
 -   [ ]  add above variables to model
 -   [ ]  clean MT state data to under 800 spatial precision
 -   [ ]  some kind of polygonal/area analysis
--   [ ]  Create outline for paper
+-   [x]  Create outline for paper
 -   [ ]  Write paper
 -   [ ]  Try different modeling methods
 -   [ ] Lay out story map
