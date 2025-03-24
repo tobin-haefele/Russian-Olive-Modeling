@@ -12,6 +12,10 @@ library(tidyverse)
 library(blockCV)
 library(randomForest)
 library(pdp)
+library(arcgisbinding)
+library(gstat)
+library(ROCR)
+
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -19,8 +23,23 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Import data
 
 ```{r data import, warning=FALSE}
-# import observations for missoula county field survey
-russian_olive_df <- read_csv("data/CombinedDataset.csv", show_col_types = FALSE)
+#import path to ArcGIS project
+path <- file.path("C:/Users/thaef/OneDrive/Documents/School/Russian-Olive-Modeling/MyProject1/MyProject1/MyProject1.gdb")
+
+#get product info
+arc.check_product()
+
+# Verify the path
+if (file.exists(path)) {
+  # Open the geodatabase
+  missoula_gdb <- arc.open(path)
+  print("Geodatabase opened successfully!")
+} else {
+  print("Invalid path or geodatabase does not exist.")
+}
+
+# Import the table from the geodatabase
+russian_olive_df <- sf::st_read(dsn = path, layer = "CombinedTable")
 
 # import missoula county shapefile
 msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
@@ -32,20 +51,20 @@ msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
 # Select the Missoula shapefile
 msl_shape <- msl_shape %>% filter(NAME == "MISSOULA")
 
-# drop CID column
-russian_olive_df <- subset(russian_olive_df,
-  select = -c(CID, EVT_NAME_M, SNAME, GNAME, RED, GREEN, BLUE)
-)
+# Convert Missoula shapefile to crs 4326 for conversion to sf object
+msl_shape <- st_transform(msl_shape, crs = 4326)
 
 # remove spaces from column names
 colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
 
-# Convert Missoula shapefile to crs 4326 for conversion to sf object
-msl_shape <- st_transform(msl_shape, crs = 4326)
+# select relevant columns (PA = presence/absence, X and Y = coordinates, and environmental variables)
+russian_olive_df <- russian_olive_df %>%
+  select(PA, X, Y, REAP_cm, FFD, soil_bulk_dens, soil_pH,
+         annual_precip_mm, jan_mean_K, jul_mean_K, LEVEL1, LEVEL2)
 
 # Convert to sf object for analysis
 survey_sf <- st_as_sf(russian_olive_df,
-  coords = c("Longitude", "Latitude"),
+  coords = c("X", "Y"),
   crs = 4326
 )
 
@@ -55,6 +74,9 @@ survey_sf$PA <- as.factor(survey_sf$PA)
 # convert all character columns to factors for proper modeling
 survey_sf <- survey_sf %>%
   mutate_if(is.character, as.factor)
+
+#convert any NA values to 0 for modeling
+survey_sf[is.na(survey_sf)] <- 0
 ```
 
 ## Testing cleaned data
@@ -72,16 +94,20 @@ ggplot() +
 #set seed for reproducibility
 set.seed(1234)
 
+
 # split data into training/testing accounting for spatial autocorrelation
 sb <- cv_spatial(
   x = survey_sf,
   column = "PA",
-  k = 10,
   selection = "random",
+  size = 9000,
+  k = 10
 )
 
 # store the folds for later use
 folds <- sb$folds_list
+
+
 ```
 
 ## Basic modeling
@@ -116,23 +142,35 @@ importance_scores <- importance(rf)
 print(importance_scores)
 varImpPlot(rf)
 
-#view the confusion matrix
-rf$confusion
+#print rf
+print(rf)
+
+#predictions
+pred <- prediction(test_table$Pred, test_table$PA)
+
+#roc curve
+roc_curve <- performance(pred, measure="tpr", x.measure = "fpr")
+
+#plot
+plot(roc_curve, main = "ROC Curve", col = "steelblue", lwd = 2)
+abline(a = 0, b = 1, lty = 2, col = "red")
+
+auc_value <- performance(pred, measure = "auc")@y.values[[1]]
+print(paste("AUC:", auc_value))
+
+
+## Variable Importance
+# pdp plot of each factors importance
+pd <- pdp::partial(rf, pred.var = "LEVEL2", plot = FALSE)
+
+print(pd)
+
+## Result by point
 
 # plot the results
-ggplot(test_table) +
-  geom_sf(aes(color = Pred), size = 2) + # Color by predicted value
-  scale_color_gradient(low = "blue", high = "red") + # Gradient for probability
-  labs(
-    title = "Predicted Probability of Presence",
-    color = "Probability"
-  ) +
-  theme_minimal()
-
-# pdp plot of each factors importance
-pd <- pdp::partial(rf, pred.var = "NEAR_DIST", plot = FALSE)
-
-plotPartial(pd)
+ggplot() +
+  geom_sf(data = msl_shape) +
+  geom_sf(data = test_table, aes(color = Pred))
 ```
 
 ```{r data output}
@@ -140,7 +178,17 @@ plotPartial(pd)
 predictions_df <- as.data.frame(test_table) %>%
   mutate(lon = sf::st_coordinates(geometry)[,1],
          lat = sf::st_coordinates(geometry)[,2])
-  
+
+#remove geometry after converting to coordinates
+predictions_df <- st_drop_geometry(predictions_df)
+
+# Add a hsuitability column based on Pred values
+predictions_df <- predictions_df %>%
+  mutate(hsuitability = case_when(
+    Pred < 0.20 ~ "Low",
+    Pred >= 0.20 & Pred <= 0.70 ~ "Medium",
+    Pred > 0.70 ~ "High"
+  ))
 
 ```
 
@@ -151,20 +199,20 @@ predictions_df <- as.data.frame(test_table) %>%
 -   [x] Frost Free Days (climate)
 -   [x] Anthropogenic Influence (land cover)
 -   [x] Introduced Vegetation (land cover)
--   [ ] Soil pH (soil)
+-   [x] Soil pH (soil)
 -   [x] Forest - Conifer (land cover)
--   [ ] Bulk Density (soil)
+-   [x] Bulk Density (soil)
 -   [x] Degree Days (climate)
--   [ ] Distance to Water Edge (hydrography)?
+-   [x] Distance to Water Edge (hydrography)?
 
 ### To Do
 
--   [ ]  Visualization of current spread (potentially past?), also ornamental vs received (grown naturally)
--   [ ]  add above variables to model
--   [ ]  clean MT state data to under 800 spatial precision
+-   [ ]  Visualization of current spread (potentially up against land ownership?)
+-   [x]  add above variables to model
+-   [x]  clean MT state data to under 800 spatial precision
 -   [ ]  some kind of polygonal/area analysis
 -   [x]  Create outline for paper
--   [ ]  Write paper
+-   [x]  Write paper
 -   [ ]  Try different modeling methods
 -   [ ] Lay out story map
 
