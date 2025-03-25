@@ -24,7 +24,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r data import, warning=FALSE}
 #import path to ArcGIS project
-path <- file.path("C:/Users/thaef/OneDrive/Documents/School/Russian-Olive-Modeling/MyProject1/MyProject1/MyProject1.gdb")
+path <- file.path("data/MyProject1/MyProject1.gdb")
 
 #get product info
 arc.check_product()
