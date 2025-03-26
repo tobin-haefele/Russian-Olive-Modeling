@@ -39,7 +39,7 @@ if (file.exists(path)) {
 }
 
 # Import the table from the geodatabase
-russian_olive_df <- sf::st_read(dsn = path, layer = "CombinedTable")
+russian_olive_df <- sf::st_read(dsn = path, layer = "Model_Data")
 
 # import missoula county shapefile
 msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
@@ -59,8 +59,7 @@ colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
 
 # select relevant columns (PA = presence/absence, X and Y = coordinates, and environmental variables)
 russian_olive_df <- russian_olive_df %>%
-  select(PA, X, Y, REAP_cm, FFD, soil_bulk_dens, soil_pH,
-         annual_precip_mm, jan_mean_K, jul_mean_K, LEVEL1, LEVEL2)
+  select(PA, X, Y, REAP, FROST_FREE_DAYS, ANNUAL_PRECIP, SUMMER_AVG_MAXTEMP, WINTER_AVG_MINTEMP, SOIL_PH, SOIL_BULK_DENSITY, LEVEL1, LEVEL2, NEAR_WATER_150m)
 
 # Convert to sf object for analysis
 survey_sf <- st_as_sf(russian_olive_df,
@@ -71,12 +70,18 @@ survey_sf <- st_as_sf(russian_olive_df,
 # convert PA to factor for random forest model
 survey_sf$PA <- as.factor(survey_sf$PA)
 
+#convert to character and replace NA with 0 for factor
+survey_sf <- survey_sf %>%
+  mutate(NEAR_WATER_150m = as.numeric(as.character(NEAR_WATER_150m))) %>%
+  mutate(NEAR_WATER_150m = replace_na(NEAR_WATER_150m, 0))
+
 # convert all character columns to factors for proper modeling
 survey_sf <- survey_sf %>%
   mutate_if(is.character, as.factor)
 
-#convert any NA values to 0 for modeling
-survey_sf[is.na(survey_sf)] <- 0
+#Filter out any NA Soil_PH values to avoid issues in RF modeling
+survey_sf <- survey_sf %>%
+  filter(!is.na(SOIL_PH))
 ```
 
 ## Testing cleaned data
@@ -86,6 +91,8 @@ survey_sf[is.na(survey_sf)] <- 0
 ggplot() +
   geom_sf(data = msl_shape) +
   geom_sf(data = survey_sf, aes(color = PA))
+
+
 ```
 
 ## Prepping the data for modeling
@@ -94,19 +101,24 @@ ggplot() +
 #set seed for reproducibility
 set.seed(1234)
 
+#view variance for data
+v <- variogram(PA ~ 1, data = survey_sf)
+
+v_model <- fit.variogram(v, model = vgm("Exp"))
+
+plot(v, v_model) 
 
 # split data into training/testing accounting for spatial autocorrelation
 sb <- cv_spatial(
   x = survey_sf,
   column = "PA",
   selection = "random",
-  size = 9000,
+  size = 7500,
   k = 10
 )
 
 # store the folds for later use
 folds <- sb$folds_list
-
 
 ```
 
