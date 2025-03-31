@@ -15,6 +15,8 @@ library(pdp)
 library(arcgisbinding)
 library(gstat)
 library(ROCR)
+library(maxnet)
+
 
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -23,23 +25,11 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Import data
 
 ```{r data import, warning=FALSE}
-#import path to ArcGIS project
-path <- file.path("data/MyProject1/MyProject1.gdb")
-
-#get product info
-arc.check_product()
-
-# Verify the path
-if (file.exists(path)) {
-  # Open the geodatabase
-  missoula_gdb <- arc.open(path)
-  print("Geodatabase opened successfully!")
-} else {
-  print("Invalid path or geodatabase does not exist.")
-}
-
-# Import the table from the geodatabase
-russian_olive_df <- sf::st_read(dsn = path, layer = "Model_Data")
+# use function to import data
+russian_olive_df <- import_arcgis_data("data/MyProject1/MyProject1.gdb",
+  "Model_data",
+  method = "sf"
+)
 
 # import missoula county shapefile
 msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
@@ -57,9 +47,11 @@ msl_shape <- st_transform(msl_shape, crs = 4326)
 # remove spaces from column names
 colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
 
-# select relevant columns (PA = presence/absence, X and Y = coordinates, and environmental variables)
+# select relevant columns
 russian_olive_df <- russian_olive_df %>%
-  select(PA, X, Y, REAP, FROST_FREE_DAYS, ANNUAL_PRECIP, SUMMER_AVG_MAXTEMP, WINTER_AVG_MINTEMP, SOIL_PH, SOIL_BULK_DENSITY, LEVEL1, LEVEL2, NEAR_WATER_150m)
+  dplyr::select(PA, X, Y, REAP, FROST_FREE_DAYS, ANNUAL_PRECIP,
+                SUMMER_AVG_MAXTEMP, WINTER_AVG_MINTEMP, SOIL_PH, 
+                SOIL_BULK_DENSITY, LEVEL1, LEVEL2, NEAR_WATER_150m)
 
 # Convert to sf object for analysis
 survey_sf <- st_as_sf(russian_olive_df,
@@ -70,7 +62,7 @@ survey_sf <- st_as_sf(russian_olive_df,
 # convert PA to factor for random forest model
 survey_sf$PA <- as.factor(survey_sf$PA)
 
-#convert to character and replace NA with 0 for factor
+# convert to character and replace NA with 0 for factor
 survey_sf <- survey_sf %>%
   mutate(NEAR_WATER_150m = as.numeric(as.character(NEAR_WATER_150m))) %>%
   mutate(NEAR_WATER_150m = replace_na(NEAR_WATER_150m, 0))
@@ -79,7 +71,7 @@ survey_sf <- survey_sf %>%
 survey_sf <- survey_sf %>%
   mutate_if(is.character, as.factor)
 
-#Filter out any NA Soil_PH values to avoid issues in RF modeling
+# Filter out any NA Soil_PH values to avoid issues in RF modeling
 survey_sf <- survey_sf %>%
   filter(!is.na(SOIL_PH))
 ```
@@ -91,22 +83,23 @@ survey_sf <- survey_sf %>%
 ggplot() +
   geom_sf(data = msl_shape) +
   geom_sf(data = survey_sf, aes(color = PA))
-
-
 ```
 
 ## Prepping the data for modeling
 
 ```{r model prep, echo=FALSE}
-#set seed for reproducibility
+# set seed for reproducibility
 set.seed(1234)
 
-#view variance for data
+# create variogram to account for spatial autocorrelation
 v <- variogram(PA ~ 1, data = survey_sf)
 
-v_model <- fit.variogram(v, model = vgm("Exp"))
+# fit variogram model
+v_model <- v %>% 
+  fit.variogram(model = vgm("Exp"))
 
-plot(v, v_model) 
+# plot variogram
+plot(v, v_model)
 
 # split data into training/testing accounting for spatial autocorrelation
 sb <- cv_spatial(
@@ -119,29 +112,32 @@ sb <- cv_spatial(
 
 # store the folds for later use
 folds <- sb$folds_list
-
 ```
 
 ## Basic modeling
 
 ```{r model, echo=FALSE, warning=FALSE}
 # Train and validate a model using the folds
-test_table <- survey_sf
-test_table$Pred <- as.numeric("NA")
+test_table <- survey_sf %>% 
+  mutate(Pred = NA_real_)
 
+#loop over each fold
 for (k in seq_len(length(folds))) {
   # Extracting the training and testing indices
   train_set <- unlist(folds[[k]][1]) # training set indices; first element
   test_set <- unlist(folds[[k]][2]) # testing set indices; second element
 
-  # Train a random forest model
-  rf <- randomForest(PA ~ ., st_drop_geometry(survey_sf[train_set, ]),
+  # Train a random forest model with training data (drop geometry)
+  rf_model <- randomForest(
+    PA ~ ., 
+    data = st_drop_geometry(survey_sf[train_set, ]),
     ntree = 500,
     importance = TRUE
   )
 
-  # Predict the test set and store probabilities
-  test_table$Pred[test_set] <- predict(rf,
+  # Predict probabilities for the test set and store
+  test_table$Pred[test_set] <- predict(
+    rf_model,
     st_drop_geometry(survey_sf[test_set, ]),
     type = "prob"
   )[, 2]
@@ -150,20 +146,20 @@ for (k in seq_len(length(folds))) {
 
 ```{r results}
 # view the variable importance scores
-importance_scores <- importance(rf)
+importance_scores <- importance(rf_model)
 print(importance_scores)
-varImpPlot(rf)
+varImpPlot(rf_model)
 
-#print rf
-print(rf)
+# print rf
+print(rf_model)
 
-#predictions
+# predictions
 pred <- prediction(test_table$Pred, test_table$PA)
 
-#roc curve
-roc_curve <- performance(pred, measure="tpr", x.measure = "fpr")
+# roc curve
+roc_curve <- performance(pred, measure = "tpr", x.measure = "fpr")
 
-#plot
+# plot
 plot(roc_curve, main = "ROC Curve", col = "steelblue", lwd = 2)
 abline(a = 0, b = 1, lty = 2, col = "red")
 
@@ -186,12 +182,14 @@ ggplot() +
 ```
 
 ```{r data output}
-#convert sf back to a df, keeping coordinates for plotting
+# convert sf back to a df, keeping coordinates for plotting
 predictions_df <- as.data.frame(test_table) %>%
-  mutate(lon = sf::st_coordinates(geometry)[,1],
-         lat = sf::st_coordinates(geometry)[,2])
+  mutate(
+    lon = sf::st_coordinates(geometry)[, 1],
+    lat = sf::st_coordinates(geometry)[, 2]
+  )
 
-#remove geometry after converting to coordinates
+# remove geometry after converting to coordinates
 predictions_df <- st_drop_geometry(predictions_df)
 
 # Add a hsuitability column based on Pred values
@@ -201,7 +199,6 @@ predictions_df <- predictions_df %>%
     Pred >= 0.20 & Pred <= 0.70 ~ "Medium",
     Pred > 0.70 ~ "High"
   ))
-
 ```
 
 ### Potential Variables to include
