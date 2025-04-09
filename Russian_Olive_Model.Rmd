@@ -216,13 +216,13 @@ predictions_df <- predictions_df %>%
 
 ### To Do
 
--   [ ]  Visualization of current spread (potentially up against land ownership?)
--   [x]  add above variables to model
--   [x]  clean MT state data to under 800 spatial precision
--   [ ]  some kind of polygonal/area analysis
--   [x]  Create outline for paper
--   [x]  Write paper
--   [ ]  Try different modeling methods
+-   [ ] Visualization of current spread (potentially up against land ownership?)
+-   [x] add above variables to model
+-   [x] clean MT state data to under 800 spatial precision
+-   [ ] some kind of polygonal/area analysis
+-   [x] Create outline for paper
+-   [x] Write paper
+-   [ ] Try different modeling methods
 -   [ ] Lay out story map
 
 ### Data sets
