@@ -59,7 +59,9 @@ import_arcgis_data <- function(user_path, layer_name, method = "arcgisbinding") 
 }
 
 # Define the output path for the new table
-output_table_path <- file.path("C:/Users/thaef/OneDrive/Documents/School/Russian-Olive-Modeling/MyProject1/MyProject1/MyProject1.gdb", "rf_predictions_tbl_new")
+output_table_path <- file.path("data/MyProject1/MyProject1.gdb", "rf_predictions_tbl_new")
+
+arc.check_product()
 
 # Export the data frame to the geodatabase
-arc.write(output_table_path, data = predictions_df)
+arc.write(output_table_path, data = predictions_df, overwrite = TRUE)

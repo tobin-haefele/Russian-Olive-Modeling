@@ -42,7 +42,7 @@ msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
 msl_shape <- msl_shape %>% filter(NAME == "MISSOULA")
 
 # Convert Missoula shapefile to crs 4326 for conversion to sf object
-msl_shape <- st_transform(msl_shape, crs = 4326)
+msl_shape <- st_transform(msl_shape, crs = 32100)
 
 # remove spaces from column names
 colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
@@ -56,7 +56,7 @@ russian_olive_df <- russian_olive_df %>%
 # Convert to sf object for analysis
 survey_sf <- st_as_sf(russian_olive_df,
   coords = c("X", "Y"),
-  crs = 4326
+  crs = 32100
 )
 
 # convert PA to factor for random forest model
@@ -106,7 +106,6 @@ sb <- cv_spatial(
   x = survey_sf,
   column = "PA",
   selection = "random",
-  size = 7500,
   k = 10
 )
 
