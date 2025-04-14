@@ -15,8 +15,7 @@ library(pdp)
 library(arcgisbinding)
 library(gstat)
 library(ROCR)
-library(maxnet)
-
+library(rJava)
 
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -33,6 +32,7 @@ russian_olive_df <- import_arcgis_data("data/MyProject1/MyProject1.gdb",
 
 # import missoula county shapefile
 msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
+
 ```
 
 ## Cleaning data
@@ -46,6 +46,10 @@ msl_shape <- st_transform(msl_shape, crs = 32100)
 
 # remove spaces from column names
 colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
+
+russian_olive_df <- russian_olive_df %>%
+  filter(!(Woody_setting %in% c("Ornamental", "Windbreak")) | is.na(Woody_setting))
+
 
 # select relevant columns
 russian_olive_df <- russian_olive_df %>%
@@ -74,6 +78,8 @@ survey_sf <- survey_sf %>%
 # Filter out any NA Soil_PH values to avoid issues in RF modeling
 survey_sf <- survey_sf %>%
   filter(!is.na(SOIL_PH))
+
+
 ```
 
 ## Testing cleaned data
@@ -106,14 +112,52 @@ sb <- cv_spatial(
   x = survey_sf,
   column = "PA",
   selection = "random",
-  k = 10
+  k = 6
 )
 
 # store the folds for later use
 folds <- sb$folds_list
+
+```
+## Initial Analysis
+```{r logreg, echo=FALSE, warning=FALSE}
+
+glm_test_table <- survey_sf %>% 
+  mutate(Pred = NA_real_)
+
+for (k in seq_along(folds)) {
+  train_ids <- unlist(folds[[k]][1])
+  test_ids  <- unlist(folds[[k]][2])
+
+  train_data <- st_drop_geometry(survey_sf[train_ids, ])
+  test_data  <- st_drop_geometry(survey_sf[test_ids, ])
+
+  # Fit logistic regression
+  logreg_model <- glm(
+    PA ~ ., 
+    data = train_data,
+    family = binomial
+  )
+
+  for (col in names(train_data)) {
+  if (is.factor(train_data[[col]]) && col %in% names(test_data)) {
+    test_data[[col]] <- factor(test_data[[col]], levels = levels(train_data[[col]]))
+    }
+  }
+  
+  # Predict probabilities
+  glm_test_table$Pred[test_set] <- predict(
+    logreg_model,
+    newdata = test_data,
+    type = "response"
+  )
+}
+
 ```
 
-## Basic modeling
+
+
+## Random Forest Modeling
 
 ```{r model, echo=FALSE, warning=FALSE}
 # Train and validate a model using the folds
@@ -125,6 +169,7 @@ for (k in seq_len(length(folds))) {
   # Extracting the training and testing indices
   train_set <- unlist(folds[[k]][1]) # training set indices; first element
   test_set <- unlist(folds[[k]][2]) # testing set indices; second element
+
 
   # Train a random forest model with training data (drop geometry)
   rf_model <- randomForest(
@@ -198,6 +243,20 @@ predictions_df <- predictions_df %>%
     Pred >= 0.20 & Pred <= 0.70 ~ "Medium",
     Pred > 0.70 ~ "High"
   ))
+
+#generate z-score
+pred_mean <- mean(predictions_df$Pred)
+
+pred_sd <- sd(predictions_df$Pred)
+
+z_score <- (predictions_df$Pred - pred_mean) / pred_sd
+
+hist(z_score)
+
+predictions_df <- predictions_df %>%
+  mutate(z_score = z_score)
+
+
 ```
 
 ### Potential Variables to include
