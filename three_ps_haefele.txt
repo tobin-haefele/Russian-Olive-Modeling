@@ -1,3 +1,16 @@
+3 P's 4/15/2025 Week 11
+o Progress: What have you accomplished since last week’s post?
+Completed another draft of written product, also added another modeling technique to compare to my rf. Attempted to do logistic regression to have a baseline but had trouble with that.
+
+o Problems: What are you stuck on or struggling with?
+I am getting super high accuracy with my models, doing some more testing to see if there's any overfitting or another issue behind the scenes.
+
+o Plans: What do you intend to accomplish between now and next week’s post?
+I intend to continue polishing my model, also correcting any changes I need to make to my digital product.
+
+o How many hours did you spend working on your Capstone since last week’s post?'
+I think around 15+ hours.
+
 3 P's 4/8/2025 Week 10
 o Progress: What have you accomplished since last week’s post?
 Continued editing my written product and digital product, I also tried to integrate some feedback into my code but that has been slow.
