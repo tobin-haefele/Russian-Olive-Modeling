@@ -15,7 +15,6 @@ library(pdp)
 library(arcgisbinding)
 library(gstat)
 library(ROCR)
-library(rJava)
 
 
 knitr::opts_chunk$set(echo = TRUE)
@@ -42,7 +41,7 @@ msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
 msl_shape <- msl_shape %>% filter(NAME == "MISSOULA")
 
 # Convert Missoula shapefile to crs 4326 for conversion to sf object
-msl_shape <- st_transform(msl_shape, crs = 32100)
+msl_shape <- st_transform(msl_shape, crs = 4326)
 
 # remove spaces from column names
 colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
@@ -60,7 +59,7 @@ russian_olive_df <- russian_olive_df %>%
 # Convert to sf object for analysis
 survey_sf <- st_as_sf(russian_olive_df,
   coords = c("X", "Y"),
-  crs = 32100
+  crs = 4326
 )
 
 # convert PA to factor for random forest model
@@ -94,29 +93,32 @@ ggplot() +
 ## Prepping the data for modeling
 
 ```{r model prep, echo=FALSE}
-# set seed for reproducibility
-set.seed(1234)
 
-# create variogram to account for spatial autocorrelation
-v <- variogram(PA ~ 1, data = survey_sf)
+survey_sf <- st_transform(survey_sf, crs = 32612) 
 
-# fit variogram model
-v_model <- v %>% 
-  fit.variogram(model = vgm("Exp"))
+# 2. Create gstat object and compute sample variogram
+v <- variogram(PA ~ 1, data = as(survey_sf, "Spatial"))
 
-# plot variogram
-plot(v, v_model)
+# 3. Fit variogram model (Exponential is fine, could also try Sph or Gau)
+v_model <- fit.variogram(v, model = vgm("Sph"))
+
+# 4. Plot
+plot(v, v_model, main = "Empirical and Fitted Variogram")
 
 # split data into training/testing accounting for spatial autocorrelation
 sb <- cv_spatial(
   x = survey_sf,
   column = "PA",
   selection = "random",
-  k = 6
+  k = 10
 )
 
 # store the folds for later use
 folds <- sb$folds_list
+
+# Save the plot to file
+ggsave("spatial_folds.png", plot = fold_plot)
+
 
 ```
 ## Initial Analysis
@@ -215,7 +217,7 @@ print(paste("AUC:", auc_value))
 # pdp plot of each factors importance
 pd <- pdp::partial(rf, pred.var = "LEVEL2", plot = FALSE)
 
-print(pd)
+pdp::plotPartial(pd, )
 
 ## Result by point
 
