@@ -16,6 +16,7 @@ library(arcgisbinding)
 library(gstat)
 library(ROCR)
 
+source("data_import_test.R")
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
@@ -24,7 +25,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r data import, warning=FALSE}
 # use function to import data
-russian_olive_df <- import_arcgis_data("data/MyProject1/MyProject1.gdb",
+russian_olive_df <- import_arcgis_data("data/RussianOlive/Default.gdb",
   "Model_data",
   method = "sf"
 )
@@ -41,14 +42,10 @@ msl_shape <- read_sf("data/MontanaStateBoundary_shp/MontanaCounties_shp")
 msl_shape <- msl_shape %>% filter(NAME == "MISSOULA")
 
 # Convert Missoula shapefile to crs 4326 for conversion to sf object
-msl_shape <- st_transform(msl_shape, crs = 4326)
+msl_shape <- st_transform(msl_shape, crs = 6318)
 
 # remove spaces from column names
 colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
-
-russian_olive_df <- russian_olive_df %>%
-  filter(!(Woody_setting %in% c("Ornamental", "Windbreak")) | is.na(Woody_setting))
-
 
 # select relevant columns
 russian_olive_df <- russian_olive_df %>%
@@ -59,13 +56,13 @@ russian_olive_df <- russian_olive_df %>%
 # Convert to sf object for analysis
 survey_sf <- st_as_sf(russian_olive_df,
   coords = c("X", "Y"),
-  crs = 4326
+  crs = 6318
 )
 
 # convert PA to factor for random forest model
 survey_sf$PA <- as.factor(survey_sf$PA)
 
-# convert to character and replace NA with 0 for factor
+# convert to numeric
 survey_sf <- survey_sf %>%
   mutate(NEAR_WATER_150m = as.numeric(as.character(NEAR_WATER_150m))) %>%
   mutate(NEAR_WATER_150m = replace_na(NEAR_WATER_150m, 0))
@@ -94,7 +91,6 @@ ggplot() +
 
 ```{r model prep, echo=FALSE}
 
-survey_sf <- st_transform(survey_sf, crs = 32612) 
 
 # 2. Create gstat object and compute sample variogram
 v <- variogram(PA ~ 1, data = as(survey_sf, "Spatial"))
@@ -110,15 +106,8 @@ sb <- cv_spatial(
   x = survey_sf,
   column = "PA",
   selection = "random",
-  k = 10
+  k = 5
 )
-
-# store the folds for later use
-folds <- sb$folds_list
-
-# Save the plot to file
-ggsave("spatial_folds.png", plot = fold_plot)
-
 
 ```
 
@@ -150,7 +139,7 @@ for (k in seq_along(folds)) {
   }
   
   # Predict probabilities
-  glm_test_table$Pred[test_set] <- predict(
+  glm_test_table$Pred[test_ids] <- predict(
     logreg_model,
     newdata = test_data,
     type = "response"

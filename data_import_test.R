@@ -58,10 +58,22 @@ import_arcgis_data <- function(user_path, layer_name, method = "arcgisbinding") 
   }
 }
 
-# Define the output path for the new table
-output_table_path <- file.path("data/MyProject1/MyProject1.gdb", "rf_predictions_tbl_new")
+# Function to export a data frame to a file geodatabase using arcgisbinding
+export_to_gdb <- function(data, gdb_path, table_name, overwrite = TRUE) {
+  # Check if arcgisbinding is available
+  if (!requireNamespace("arcgisbinding", quietly = TRUE)) {
+    stop("arcgisbinding package is required but not installed.")
+  }
+  
+  # Initialize ArcGIS product
+  arcgisbinding::arc.check_product()
+  
+  # Create full path for the output table
+  output_table_path <- file.path(gdb_path, table_name)
+  
+  # Write the data
+  arcgisbinding::arc.write(output_table_path, data = data, overwrite = overwrite)
+  
+  message(paste("Successfully exported", table_name, "to", gdb_path))
+}
 
-arc.check_product()
-
-# Export the data frame to the geodatabase
-arc.write(output_table_path, data = predictions_df, overwrite = TRUE)
