@@ -121,7 +121,9 @@ ggsave("spatial_folds.png", plot = fold_plot)
 
 
 ```
+
 ## Initial Analysis
+
 ```{r logreg, echo=FALSE, warning=FALSE}
 
 glm_test_table <- survey_sf %>% 
@@ -156,8 +158,6 @@ for (k in seq_along(folds)) {
 }
 
 ```
-
-
 
 ## Random Forest Modeling
 
