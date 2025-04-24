@@ -27,11 +27,56 @@
 + [Authors](#authors)
 
 ## About <a name = "about"></a>
-This project is a collaboration between myself and the Missoula County Ecology Extension Office. The goal of the project is to create a model that can predict the spread of Russian Olive in Missoula County. The model will be used to inform land management decisions and help prioritize areas for removal.
+This R file is for a project that aims to create a predictive model to understand and forecast the spread of Russian Olive trees in Missoula County, Montana. This modeling project is a collaboration with the Missoula County Ecology Extension Office, with the end goal of helping inform land management decisions, particularly in prioritizing areas for removal of Russian Olive trees.
+Breakdown of Key Steps:
 
-Currently the project is in the modeling phase. The model is being developed in R and will use a random forest model to predict the spread of Russian Olive. The model will be trained on data collected by the Missoula County Ecology Extension Office and the Montana Natural Heritage Program. The model will be validated using a block cross validation method and the results will be visualized using ggplot2, sf, and ArcGIS.
+    Data Collection and Preparation:
 
-In the future the model will be integrated with ArcGIS to allow for easier data import and export. There will also be a web interface that will allow users to explore the output of the model and visualize potential areas of interest for Russian Olive removal and mitigation.
+        The file likely begins by loading relevant environmental and ecological data for Missoula County. This may include variables such as soil properties, climate data (e.g., temperature, precipitation), and land cover types.
+
+        It’s probable that there’s some spatial data processing happening too (e.g., using libraries like sf for spatial objects, raster for raster data, or dplyr for data manipulation).
+
+    Model Development:
+
+        The core part of the project is the development and training of multiple models that can predict the spread of Russian Olive. Common modeling techniques in this context could include:
+
+            Logistic regression (GLM): Used for binary classification, likely to predict the presence or absence of Russian Olive in different locations.
+
+            Random Forest (RF): This machine learning algorithm can be used to capture complex relationships between predictors and outcomes.
+
+            Gradient Boosting Machines (GBM): Another machine learning algorithm that builds a predictive model by combining the outputs of many weak models (trees).
+
+            Generalized Additive Models (GAM): These are often used when the relationships between predictors and outcomes are non-linear.
+
+        The different models will be trained on various subsets of data and evaluated using appropriate metrics like accuracy, precision, and recall.
+
+    Model Evaluation:
+
+        The models are compared to each other based on performance metrics. These metrics could include:
+
+            Accuracy: The proportion of correct predictions.
+
+            Precision: The proportion of positive predictions that were actually correct.
+
+            Recall: The proportion of actual positives that were correctly identified.
+
+        Cross-validation (or similar) could be used to evaluate how well each model generalizes to new data.
+
+    Selection of Best Model:
+
+        After evaluating all the models, the one with the best performance across these metrics is selected as the final model for making predictions about the spread of Russian Olive.
+
+        This ensures that the final chosen model has the highest likelihood of providing accurate and reliable predictions for land management purposes.
+
+    Predictions and Visualizations:
+
+        Once the best model is selected, it will be used to predict the spread of Russian Olive in Missoula County. These predictions will likely be spatially distributed, showing which areas are most vulnerable to Russian Olive spread.
+
+        The results will be visualized using tools like ggplot2 or spatial plotting packages like ggspatial. This step makes it easier for stakeholders to understand the model's findings and make data-driven decisions for land management.
+
+    Sharing the Results:
+
+        Finally, the results—including the selected model and the visualized data—will be shared with the Missoula County Ecology Extension Office and other stakeholders. This allows them to make informed decisions based on the predictions, such as where to focus Russian Olive removal efforts.
 
 ## Getting Started <a name = "getting_started"></a>
 These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
@@ -74,7 +119,7 @@ data_dir <- "path/to/data"
 At this point you should be able to run the R script and generate the model.
 
 ```
-Rscript Russian_Olive_Modeling.R
+Rscript Russian_Olive_Model.R
 ```
 
 ## Usage <a name = "usage"></a>
@@ -95,8 +140,8 @@ At this point there are several caveats to the modeling process that will have t
 - [x] Add more raster data
 - [x] Add more visualizations
 - [x] Add more documentation
-- [ ] Add more testing and validation (corr plot, etc.)
-- [ ] Add Maxent or other model
+- [x] Add more testing and validation (corr plot, etc.)
+- [x] Add Maxent or other model
 
 
 

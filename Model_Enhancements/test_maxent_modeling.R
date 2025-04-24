@@ -36,11 +36,18 @@ tif_list <- get_tif_files("data/")
 print(tif_list)
 
 # Load all TIFFs into a list
-raster_list <- lapply(tif_list, raster)
+raster_list <- lapply(tif_list, rast)
 names(raster_list) <- basename(tif_list)
 
 #stack the first 7 rasters
-raster_list <- raster_list[1:6]
+r_list <- raster_list[0:3]
+
+# For terra raster objects
+lapply(seq_along(r_list), function(i) {
+  cat("\nRaster", i, "-", names(r_list[[i]]), ":\n")
+  print(ext(r_list[[i]]))  # `ext()` is terra's version of `extent()`
+})
+
 
 # Step 1: Get the extent and CRS you want to standardize to (e.g., from msl_shape)
 target_extent <- extent(msl_shape)
@@ -48,9 +55,8 @@ target_crs <- st_crs(msl_shape)$proj4string
 
 # Step 2: Reproject all rasters to same CRS and crop/mask to extent
 raster_list <- lapply(raster_list, function(r) {
-  r <- projectRaster(r, crs = target_crs, method = "bilinear") # resample + reproject
-  r <- crop(r, target_extent)
   r <- mask(r, msl_shape)
+  r <- crop(r, target_extent)
   return(r)
 })
 
