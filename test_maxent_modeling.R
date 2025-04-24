@@ -3,16 +3,12 @@ library(raster)
 library(dismo)
 library(arcgisbinding)
 library(sf)
-library(raster)
+library(terra)
 library(sp)
 library(maxnet)
-
-data("bradypus")
+library(dismo)
 
 setwd("~/School/Russian-Olive-Modeling")
-#load data from geodatabase and mask it to the missoula county shapefile
-
-
 # Get all TIFFs with error handling
 get_tif_files <- function(folder_path) {
   if (!dir.exists(folder_path)) {
@@ -43,10 +39,28 @@ print(tif_list)
 raster_list <- lapply(tif_list, raster)
 names(raster_list) <- basename(tif_list)
 
-r1 <- raster_list[[7]]
-cr <- projection(r1)
+#stack the first 7 rasters
+raster_list <- raster_list[1:6]
 
-data <- data %>%
-  mutate(across(where(is.integer), as.numeric))
+# Step 1: Get the extent and CRS you want to standardize to (e.g., from msl_shape)
+target_extent <- extent(msl_shape)
+target_crs <- st_crs(msl_shape)$proj4string
 
-MSWD <- maxent(p = p, data = st_drop_geometry(data))
+# Step 2: Reproject all rasters to same CRS and crop/mask to extent
+raster_list <- lapply(raster_list, function(r) {
+  r <- projectRaster(r, crs = target_crs, method = "bilinear") # resample + reproject
+  r <- crop(r, target_extent)
+  r <- mask(r, msl_shape)
+  return(r)
+})
+
+# Step 3: Align resolutions (optional but helps with precision)
+# Use the first raster as the template for alignment
+template_raster <- raster_list[[1]]
+
+raster_list <- lapply(raster_list, function(r) {
+  resample(r, template_raster, method = "bilinear")
+})
+
+# Step 4: Now stack
+raster_stack <- stack(raster_list)
