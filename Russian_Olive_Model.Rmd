@@ -6,6 +6,9 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+#set working directory
+setwd("~/GitHub/Russian-Olive-Modeling")
+
 library(sf)
 library(ggplot2)
 library(tidyverse)
@@ -19,6 +22,7 @@ library(mgcv)
 library(corrplot)
 library(gbm)
 library(car)
+library(summarytools)
 
 source("data_import_test.R")
 
@@ -29,7 +33,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r data import, warning=FALSE}
 # use function to import data
-russian_olive_df <- import_arcgis_data("data/MyProject1/MyProject1.gdb",
+
+# laptop version
+russian_olive_df <- import_arcgis_data("data/RussianOlive/Default.gdb",
+                                       
+#russian_olive_df <- import_arcgis_data("data/MyProject1/MyProject1.gdb",
   "Model_data",
   method = "sf"
 )
@@ -90,7 +98,7 @@ survey_sf <- survey_sf %>%
 
 ```{r plot, echo=FALSE}
 #brief summary of all the variables
-summary(survey_sf)
+summarytools::dfSummary(st_drop_geometry(survey_sf))
 
 # Plot histograms for all numeric variables
 numeric_vars <- russian_olive_df %>%
@@ -106,21 +114,37 @@ ggplot(numeric_vars_long, aes(x = value)) +
   theme_minimal() +
   labs(title = "Distribution of Numeric Variables")
 
-# Plot bar plots for categorical variables
+# Assuming 'russian_olive_df' has the PA (presence/absence) column
 categorical_vars <- russian_olive_df %>%
-  dplyr::select(LEVEL1, LEVEL2)
+  dplyr::select(PA, LEVEL1, LEVEL2)
 
-# Plot bar plots
-categorical_vars_long <- gather(categorical_vars, key = "variable", value = "value")
+# Function to create plots
+plot_categorical_distribution <- function(data, title) {
+  data_long <- data %>%
+    gather(key = "variable", value = "value", LEVEL1, LEVEL2)
+  
+  ggplot(data_long, aes(x = value)) +
+    geom_bar() +
+    facet_wrap(~variable, scales = "free_x") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
+    labs(title = title, x = "Category", y = "Count")
+}
 
-#
-ggplot(categorical_vars_long, aes(x = value)) +
-  geom_bar() +
-  facet_wrap(~variable, scales = "free_x") +
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8)) +
-  labs(title = "Distribution of Categorical Variables")
+# 1. Combined (all points)
+plot_categorical_distribution(categorical_vars, "Distribution of Categorical Variables (All Points)")
 
+# 2. Absence only (PA == 0)
+plot_categorical_distribution(
+  categorical_vars %>% filter(PA == 0),
+  "Distribution of Categorical Variables (Absence Points Only)"
+)
+
+# 3. Presence only (PA == 1)
+plot_categorical_distribution(
+  categorical_vars %>% filter(PA == 1),
+  "Distribution of Categorical Variables (Presence Points Only)"
+)
 
 #view the correlation matrix
 cor_matrix <- cor(numeric_vars, use = "complete.obs")
@@ -171,15 +195,19 @@ model_metrics <- data.frame(
 ```
 
 ## Model Testing
+
 To ensure we have selected the best model for the job, I want to test several different models and compare their accuracy when predicting the presence of Russian Olive.
 
 ### Generalized Linear Model (GLM)
-This model is a great baseline to use.
-```{r logreg, echo=TRUE, warning=FALSE}
 
+This model is a great baseline to use.
+
+```{r logreg, echo=TRUE, warning=FALSE}
+#setup test table for glm
 glm_test_table <- survey_sf %>% 
   mutate(Pred = NA_real_)
 
+#loop through each fold 
 for (k in seq_along(folds)) {
   train_ids <- folds[[k]][[1]]
   test_ids  <- folds[[k]][[2]]
@@ -187,12 +215,12 @@ for (k in seq_along(folds)) {
   train_data <- st_drop_geometry(survey_sf[train_ids, ])
   test_data  <- st_drop_geometry(survey_sf[test_ids, ])
   
-  #drop LEVEL2 column
+  #drop LEVEL2 column from train and test data to avoid errors in unseen values
   train_data <- train_data %>%
-    dplyr::select(-LEVEL2)
+    dplyr::select(-c(LEVEL2, LEVEL1))
   
   test_data <- test_data %>%
-    dplyr::select(-LEVEL2)
+    dplyr::select(-c(LEVEL2, LEVEL1))
   
   # Fit logistic regression
   glm_model <- glm(
@@ -214,9 +242,6 @@ for (k in seq_along(folds)) {
 #view summary
 summary(glm_model)
 
-#view r-squared
-glm_model$R
-
 #get predictions 
 glm_pred <- prediction(glm_test_table$Pred, glm_test_table$PA)
 
@@ -237,6 +262,7 @@ model_metrics <- rbind(
 ```
 
 ### Generalized Additive Model(GAM)
+
 ```{r GAM}
 gam_test_table <- survey_sf %>% 
   mutate(Pred = NA_real_)
@@ -249,15 +275,17 @@ for (k in seq_along(folds)) {
   test_data  <- st_drop_geometry(survey_sf[test_ids, ])
 
   # Fit logistic regression
-  gam_model <- gam(
-    PA ~ s(FROST_FREE_DAYS) + s(ANNUAL_PRECIP) + s(SUMMER_AVG_MAXTEMP) + 
-        s(WINTER_AVG_MINTEMP) + s(SOIL_PH) + s(SOIL_BULK_DENSITY) + 
-        NEAR_WATER_150m + 
-        LEVEL1 + LEVEL2,
-    data = train_data,
-    family = binomial,
-    
-  )
+  gam_model <- gam(PA ~ 
+                  s(FROST_FREE_DAYS) + 
+                  s(ANNUAL_PRECIP) + 
+                  s(SUMMER_AVG_MAXTEMP) + 
+                  s(WINTER_AVG_MINTEMP) + 
+                  s(SOIL_PH) + 
+                  s(SOIL_BULK_DENSITY) + 
+                  NEAR_WATER_150m,     
+                data = train_data,
+                family = binomial()
+)
 
   # Predict probabilities
   gam_test_table$Pred[test_ids] <- predict(
@@ -267,9 +295,11 @@ for (k in seq_along(folds)) {
   )
 }
 
+summary(gam_model)
 ```
 
 ### Random Forest Modeling
+
 ```{r model, echo=FALSE, warning=FALSE}
 # Train and validate a model using the folds
 test_table <- survey_sf %>% 
@@ -277,29 +307,43 @@ test_table <- survey_sf %>%
 
 #loop over each fold
 for (k in seq_len(length(folds))) {
-  # Extracting the training and testing indices
-  train_set <- unlist(folds[[k]][1]) # training set indices; first element
-  test_set <- unlist(folds[[k]][2]) # testing set indices; second element
-
+  
+  #select the IDs from each fold
+  train_ids <- folds[[k]][[1]]
+  test_ids  <- folds[[k]][[2]]
+  
+  #index the dataframe and assign the respective ids to sets
+  train_data <- st_drop_geometry(survey_sf[train_ids, ])
+  test_data  <- st_drop_geometry(survey_sf[test_ids, ])
+  
+  #drop landcover variables
+  train_data <- train_data %>%
+    dplyr::select(-c(LEVEL2, LEVEL1))
+  
+  test_data <- test_data %>%
+    dplyr::select(-c(LEVEL2, LEVEL1))
 
   # Train a random forest model with training data (drop geometry)
   rf_model <- randomForest(
     PA ~ ., 
-    data = st_drop_geometry(survey_sf[train_set, ]),
+    data = train_data,
     ntree = 500,
     importance = TRUE
   )
 
   # Predict probabilities for the test set and store
-  test_table$Pred[test_set] <- predict(
+  test_table$Pred[test_ids] <- predict(
     rf_model,
-    st_drop_geometry(survey_sf[test_set, ]),
+    test_data,
     type = "prob"
   )[, 2]
 }
 ```
 
 ```{r rf results}
+#summary
+rf_model$importanceSD
+
 #get predictions
 rf_pred <- prediction(test_table$Pred, test_table$PA)
 
@@ -318,10 +362,10 @@ model_metrics <- rbind(
   data.frame(Model = "Random Forest", AUC = rf_auc_value, Accuracy = rf_accuracy)
 )
 
-summary(rf_model)
-
 ```
+
 ### Gradient Boosting Machine (GBM)
+
 ```{r GBM model}
 gbm_preds <- survey_sf %>%
   st_drop_geometry() %>%
@@ -336,6 +380,12 @@ for (k in seq_along(folds)) {
   
   train_data$PA <- as.integer(as.character(train_data$PA))
   test_data$PA  <- as.integer(as.character(test_data$PA))
+  
+  train_data <- train_data %>%
+    dplyr::select(-c(LEVEL2, LEVEL1))
+  
+  test_data <- test_data %>%
+    dplyr::select(-c(LEVEL2, LEVEL1))
   
   # Fit the GBM model
   model <- gbm(
@@ -364,6 +414,9 @@ for (k in seq_along(folds)) {
 ```
 
 ```{r gbm results}
+#summary
+summary(model)
+
 #get predictions
 gbm_pred <- prediction(gbm_preds$GBM_Pred, gbm_preds$PA)
 
