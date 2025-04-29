@@ -26,7 +26,7 @@ This document serves as a record of the project, including its goals, challenges
 - Overall I don't think I have anything that I am super reliant on in regards to ArcGIS. I will definitely need to make sure I have everything backed up and saved in a way that I can access it without ArcGIS. I think the best way to do this is to have a folder structure that is easy to navigate and has everything organized in a way that makes sense. 
 
 ## Work To Do (Capstone Related)
-- [ ] Attempt to finish the GAM model.
+- [X] Attempt to finish the GAM model.
 - [ ] Polish my written report and presentation to be more concise and clear about the modeling process and results.
 - [ ] Compare the different model results and document the differences and similarities.
 - [ ] Test interpolation methods and mapping within R to see if I can get a better result than ArcGIS.

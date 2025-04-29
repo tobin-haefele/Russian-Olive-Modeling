@@ -7,7 +7,9 @@ output: html_document
 
 ```{r setup, include=FALSE}
 #set working directory
-setwd("~/GitHub/Russian-Olive-Modeling")
+#setwd("~/GitHub/Russian-Olive-Modeling")
+setwd("~/School/Russian-Olive-Modeling")
+
 
 library(sf)
 library(ggplot2)
@@ -35,9 +37,9 @@ knitr::opts_chunk$set(echo = TRUE)
 # use function to import data
 
 # laptop version
-russian_olive_df <- import_arcgis_data("data/RussianOlive/Default.gdb",
+#russian_olive_df <- import_arcgis_data("data/RussianOlive/Default.gdb",
                                        
-#russian_olive_df <- import_arcgis_data("data/MyProject1/MyProject1.gdb",
+russian_olive_df <- import_arcgis_data("data/MyProject1/MyProject1.gdb",
   "Model_data",
   method = "sf"
 )
@@ -189,6 +191,8 @@ model_metrics <- data.frame(
   Model = character(),
   AUC = numeric(),
   Accuracy = numeric(),
+  Sensitivity = numeric(),
+  Specificity = numeric(),
   stringsAsFactors = FALSE
 )
 
@@ -251,12 +255,28 @@ glm_roc_curve <- performance(glm_pred, measure = "tpr", x.measure = "fpr")
 #create auc
 glm_auc_value <- performance(glm_pred, measure = "auc")@y.values[[1]]
 
-# calculate accuracy
-glm_accuracy <- sum(ifelse(glm_test_table$Pred > 0.5, 1, 0) == glm_test_table$PA) / nrow(glm_test_table)
+# predict class labels using threshold 0.5
+glm_test_table$Pred_Class <- ifelse(glm_test_table$Pred > 0.5, 1, 0)
 
+# Confusion matrix components
+TP <- sum(glm_test_table$Pred_Class == 1 & glm_test_table$PA == 1)
+TN <- sum(glm_test_table$Pred_Class == 0 & glm_test_table$PA == 0)
+FP <- sum(glm_test_table$Pred_Class == 1 & glm_test_table$PA == 0)
+FN <- sum(glm_test_table$Pred_Class == 0 & glm_test_table$PA == 1)
+
+# Calculate metrics
+glm_sensitivity <- TP / (TP + FN)
+glm_specificity <- TN / (TN + FP)
+glm_accuracy    <- (TP + TN) / (TP + TN + FP + FN)
+
+#add to model metrics
 model_metrics <- rbind(
   model_metrics,
-  data.frame(Model = "GLM", AUC = glm_auc_value, Accuracy = glm_accuracy)
+  data.frame(Model = "GLM",
+             AUC = glm_auc_value,
+             Accuracy = glm_accuracy,
+             Sensitivity = glm_sensitivity,
+             Specificity = glm_specificity)
 )
 
 ```
@@ -295,14 +315,52 @@ for (k in seq_along(folds)) {
   )
 }
 
+```
+
+```{r gam results}
+#view summary
 summary(gam_model)
+
+#get predictions 
+gam_pred <- prediction(gam_test_table$Pred, gam_test_table$PA)
+
+#create ROC
+gam_roc_curve <- performance(gam_pred, measure = "tpr", x.measure = "fpr")
+
+#create auc
+gam_auc_value <- performance(gam_pred, measure = "auc")@y.values[[1]]
+
+# predict class labels using threshold 0.5
+gam_test_table$Pred_Class <- ifelse(gam_test_table$Pred > 0.5, 1, 0)
+
+# Confusion matrix components
+TP <- sum(gam_test_table$Pred_Class == 1 & gam_test_table$PA == 1)
+TN <- sum(gam_test_table$Pred_Class == 0 & gam_test_table$PA == 0)
+FP <- sum(gam_test_table$Pred_Class == 1 & gam_test_table$PA == 0)
+FN <- sum(gam_test_table$Pred_Class == 0 & gam_test_table$PA == 1)
+
+# Calculate metrics
+gam_sensitivity <- TP / (TP + FN)
+gam_specificity <- TN / (TN + FP)
+gam_accuracy    <- (TP + TN) / (TP + TN + FP + FN)  # total correct / total samples
+
+# Add to model metrics
+model_metrics <- rbind(
+  model_metrics,
+  data.frame(Model = "gam",
+             AUC = gam_auc_value,
+             Accuracy = gam_accuracy,
+             Sensitivity = gam_sensitivity,
+             Specificity = gam_specificity)
+)
+
 ```
 
 ### Random Forest Modeling
 
 ```{r model, echo=FALSE, warning=FALSE}
 # Train and validate a model using the folds
-test_table <- survey_sf %>% 
+rf_test_table <- survey_sf %>% 
   mutate(Pred = NA_real_)
 
 #loop over each fold
@@ -332,7 +390,7 @@ for (k in seq_len(length(folds))) {
   )
 
   # Predict probabilities for the test set and store
-  test_table$Pred[test_ids] <- predict(
+  rf_test_table$Pred[test_ids] <- predict(
     rf_model,
     test_data,
     type = "prob"
@@ -342,7 +400,7 @@ for (k in seq_len(length(folds))) {
 
 ```{r rf results}
 #summary
-rf_model$importanceSD
+rf_model$importance
 
 #get predictions
 rf_pred <- prediction(test_table$Pred, test_table$PA)
@@ -353,15 +411,35 @@ roc_curve <- performance(rf_pred, measure = "tpr", x.measure = "fpr")
 #create auc
 rf_auc_value <- performance(rf_pred, measure = "auc")@y.values[[1]]
 
-# calculate accuracy
-rf_accuracy <- sum(ifelse(test_table$Pred > 0.5, 1, 0) == test_table$PA) / nrow(test_table)
+# predict class labels using threshold 0.5
+rf_test_table$Pred_Class <- ifelse(rf_test_table$Pred > 0.5, 1, 0)
 
-# add to model metrics
+# Confusion matrix components
+TP <- sum(rf_test_table$Pred_Class == 1 & rf_test_table$PA == 1)
+TN <- sum(rf_test_table$Pred_Class == 0 & rf_test_table$PA == 0)
+FP <- sum(rf_test_table$Pred_Class == 1 & rf_test_table$PA == 0)
+FN <- sum(rf_test_table$Pred_Class == 0 & rf_test_table$PA == 1)
+
+# Calculate metrics
+rf_sensitivity <- TP / (TP + FN)
+rf_specificity <- TN / (TN + FP)
+rf_accuracy    <- (TP + TN) / (TP + TN + FP + FN)  # total correct / total samples
+
+# Add to model metrics
 model_metrics <- rbind(
   model_metrics,
-  data.frame(Model = "Random Forest", AUC = rf_auc_value, Accuracy = rf_accuracy)
+  data.frame(Model = "rf",
+             AUC = rf_auc_value,
+             Accuracy = rf_accuracy,
+             Sensitivity = rf_sensitivity,
+             Specificity = rf_specificity)
 )
 
+
+#pdp plot of random forest variables
+pd <- partial(rf_model, pred.var = "REAP", train = st_drop_geometry(rf_test_table))
+
+plotPartial(pd)
 ```
 
 ### Gradient Boosting Machine (GBM)
@@ -402,7 +480,7 @@ for (k in seq_along(folds)) {
   )
   
   # Use early stopping with OOB estimate
-  best_iter <- gbm.perf(model, method = "cv")
+  best_iter <- gbm.perf(model, method = "cv", plot.it = FALSE)
 
   best_iter
   
@@ -426,16 +504,29 @@ roc_curve <- performance(gbm_pred, measure = "tpr", x.measure = "fpr")
 #create auc
 gbm_auc_value <- performance(gbm_pred, measure = "auc")@y.values[[1]]
 
-# calculate accuracy
-gbm_accuracy <- sum(ifelse(gbm_preds$GBM_Pred > 0.5, 1, 0) == gbm_preds$PA) / nrow(gbm_preds)
+# predict class labels using threshold 0.5
+gbm_preds$Pred_Class <- ifelse(gbm_preds$GBM_Pred > 0.5, 1, 0)
 
-# add to model metrics
+# Confusion matrix components
+TP <- sum(gbm_preds$Pred_Class == 1 & gbm_preds$PA == 1)
+TN <- sum(gbm_preds$Pred_Class == 0 & gbm_preds$PA == 0)
+FP <- sum(gbm_preds$Pred_Class == 1 & gbm_preds$PA == 0)
+FN <- sum(gbm_preds$Pred_Class == 0 & gbm_preds$PA == 1)
+
+# Calculate metrics
+gbm_sensitivity <- TP / (TP + FN)
+gbm_specificity <- TN / (TN + FP)
+gbm_accuracy    <- (TP + TN) / (TP + TN + FP + FN)  # total correct / total samples
+
+# Add to model metrics
 model_metrics <- rbind(
   model_metrics,
-  data.frame(Model = "GBM", AUC = gbm_auc_value, Accuracy = gbm_accuracy)
+  data.frame(Model = "gbm",
+             AUC = gbm_auc_value,
+             Accuracy = gbm_accuracy,
+             Sensitivity = gbm_sensitivity,
+             Specificity = gbm_specificity)
 )
-
-summary(model)
 ```
 
 ```{r results}
