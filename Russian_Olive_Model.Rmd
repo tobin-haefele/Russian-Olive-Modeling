@@ -16,6 +16,7 @@ library(ggplot2)
 library(tidyverse)
 library(blockCV)
 library(randomForest)
+library(vip)
 library(pdp)
 library(arcgisbinding)
 library(gstat)
@@ -65,7 +66,7 @@ colnames(russian_olive_df) <- gsub(" ", "_", colnames(russian_olive_df))
 russian_olive_df <- russian_olive_df %>%
   dplyr::select(PA, X, Y, REAP, FROST_FREE_DAYS, ANNUAL_PRECIP,
                 SUMMER_AVG_MAXTEMP, WINTER_AVG_MINTEMP, SOIL_PH, 
-                SOIL_BULK_DENSITY, LEVEL1, LEVEL2, NEAR_WATER_150m)
+                SOIL_BULK_DENSITY, LEVEL1, LEVEL2)
 
 # Convert to sf object for analysis
 survey_sf <- st_as_sf(russian_olive_df,
@@ -75,11 +76,6 @@ survey_sf <- st_as_sf(russian_olive_df,
 
 # convert PA to factor for random forest model
 survey_sf$PA <- as.factor(survey_sf$PA)
-
-# convert to numeric
-survey_sf <- survey_sf %>%
-  mutate(NEAR_WATER_150m = as.numeric(as.character(NEAR_WATER_150m))) %>%
-  mutate(NEAR_WATER_150m = replace_na(NEAR_WATER_150m, 0))
 
 # convert all character columns to factors for proper modeling
 survey_sf <- survey_sf %>%
@@ -169,7 +165,7 @@ set.seed(123)
 v <- variogram(PA ~ 1, data = as(survey_sf, "Spatial"))
 
 # Fit variogram model (Exponential is fine, could also try Sph or Gau)
-v_model <- fit.variogram(v, model = vgm("Exp"))
+v_model <- fit.variogram(v, model = vgm("Sph"))
 
 # Plot
 plot(v, v_model, main = "Empirical and Fitted Variogram")
@@ -373,13 +369,6 @@ for (k in seq_len(length(folds))) {
   #index the dataframe and assign the respective ids to sets
   train_data <- st_drop_geometry(survey_sf[train_ids, ])
   test_data  <- st_drop_geometry(survey_sf[test_ids, ])
-  
-  #drop landcover variables
-  train_data <- train_data %>%
-    dplyr::select(-c(LEVEL2, LEVEL1))
-  
-  test_data <- test_data %>%
-    dplyr::select(-c(LEVEL2, LEVEL1))
 
   # Train a random forest model with training data (drop geometry)
   rf_model <- randomForest(
@@ -411,6 +400,8 @@ roc_curve <- performance(rf_pred, measure = "tpr", x.measure = "fpr")
 #create auc
 rf_auc_value <- performance(rf_pred, measure = "auc")@y.values[[1]]
 
+hist(rf_test_table$Pred)
+
 # predict class labels using threshold 0.5
 rf_test_table$Pred_Class <- ifelse(rf_test_table$Pred > 0.5, 1, 0)
 
@@ -437,9 +428,20 @@ model_metrics <- rbind(
 
 
 #pdp plot of random forest variables
-pd <- partial(rf_model, pred.var = "REAP", train = st_drop_geometry(rf_test_table))
+pd <- partial(rf_model, pred.var = "LEVEL2", train = st_drop_geometry(rf_test_table), )
 
 plotPartial(pd)
+
+ggplot(pd, aes(x = LEVEL2, y = yhat)) +
+  geom_col(fill = "steelblue") +
+  labs(title = "Partial Dependence for LEVEL1",
+       x = "LEVEL2 Category",
+       y = "y-hat") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+vip(rf_model, aesthetics = list(fill = "steelblue", color = "black", alpha = 0.8))
+
 ```
 
 ### Gradient Boosting Machine (GBM)
@@ -533,6 +535,18 @@ model_metrics <- rbind(
 # Print the model metrics
 print(model_metrics)
 
+#plot points based on predicted value
+ggplot(rf_test_table) +
+  geom_sf(aes(color = Pred), size = 1, alpha = 0.8) +
+  scale_color_viridis_c(option = "plasma") +
+  labs(title = "Predicted Probability of Russian Olive Presence",
+       color = "Prediction") +
+  theme_minimal()
+
+ggplot(rf_test_table, aes(x = SOIL_PH, y = FROST_FREE_DAYS, color = Pred)) +
+  geom_point(alpha = 0.6) +
+  scale_color_viridis_c() +
+  theme_minimal()
 
 ```
 
