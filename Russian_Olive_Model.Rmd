@@ -342,7 +342,7 @@ for (k in seq_len(length(folds))) {
 
 ```{r rf results}
 #summary
-rf_model$importanceSD
+rf_model$importance
 
 #get predictions
 rf_pred <- prediction(test_table$Pred, test_table$PA)
