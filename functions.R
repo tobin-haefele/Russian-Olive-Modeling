@@ -60,6 +60,8 @@ import_arcgis_data <- function(user_path, layer_name, method = "arcgisbinding") 
 
 # Function to export a data frame to a file geodatabase using arcgisbinding
 export_to_gdb <- function(data, gdb_path, table_name, overwrite = TRUE) {
+  
+  
   # Check if arcgisbinding is available
   if (!requireNamespace("arcgisbinding", quietly = TRUE)) {
     stop("arcgisbinding package is required but not installed.")
@@ -77,3 +79,36 @@ export_to_gdb <- function(data, gdb_path, table_name, overwrite = TRUE) {
   message(paste("Successfully exported", table_name, "to", gdb_path))
 }
 
+#function to create model statistics
+evaluate_binary_classifier <- function(df, pred_col, truth_col, model_name = "model", threshold = 0.5, auc_value = NA) {
+  # Convert column names to strings
+  pred_col <- rlang::as_name(rlang::ensym(pred_col))
+  truth_col <- rlang::as_name(rlang::ensym(truth_col))
+  
+  # Add predicted class column
+  df <- df %>%
+    mutate(Pred_Class = if_else(.data[[pred_col]] > threshold, 1, 0))
+  
+  # Calculate confusion matrix components
+  counts <- df %>%
+    summarize(
+      TP = sum(Pred_Class == 1 & .data[[truth_col]] == 1),
+      TN = sum(Pred_Class == 0 & .data[[truth_col]] == 0),
+      FP = sum(Pred_Class == 1 & .data[[truth_col]] == 0),
+      FN = sum(Pred_Class == 0 & .data[[truth_col]] == 1)
+    )
+  
+  # Derive performance metrics
+  metrics <- counts %>%
+    mutate(
+      Sensitivity = TP / (TP + FN),
+      Specificity = TN / (TN + FP),
+      Accuracy    = (TP + TN) / (TP + TN + FP + FN),
+      AUC         = auc_value
+    ) %>%
+    select(AUC, Accuracy, Sensitivity, Specificity)
+  
+  # Return results as a tidy tibble
+  tibble(Model = model_name) %>%
+    bind_cols(metrics)
+}

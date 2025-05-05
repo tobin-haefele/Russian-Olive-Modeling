@@ -28,6 +28,6 @@ This document serves as a record of the project, including its goals, challenges
 ## Work To Do (Capstone Related)
 - [X] Attempt to finish the GAM model.
 - [ ] Polish my written report and presentation to be more concise and clear about the modeling process and results.
-- [x] Compare the different model results and document the differences and similarities.
+- [ ] Compare the different model results and document the differences and similarities.
 - [ ] Test interpolation methods and mapping within R to see if I can get a better result than ArcGIS.
 
